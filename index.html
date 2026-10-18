@@ -103,6 +103,35 @@
     const campo = document.getElementById("ejercicio");
     const lista = document.getElementById("lista");
     const mensajeVacio = document.getElementById("mensaje-vacio");
+    const CLAVE = "ejercicios";
+
+    // Lee los ejercicios guardados en el navegador (o una lista vacía si no hay)
+    function cargarEjercicios() {
+      try {
+        const guardados = localStorage.getItem(CLAVE);
+        return guardados ? JSON.parse(guardados) : [];
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function guardarEjercicios() {
+      try {
+        localStorage.setItem(CLAVE, JSON.stringify(ejercicios));
+      } catch (error) {
+        // Si el navegador no permite guardar, la app sigue funcionando sin guardar
+      }
+    }
+
+    function mostrarEjercicio(nombre) {
+      const elemento = document.createElement("li");
+      elemento.textContent = nombre;
+      lista.appendChild(elemento);
+      mensajeVacio.hidden = true;
+    }
+
+    const ejercicios = cargarEjercicios();
+    ejercicios.forEach(mostrarEjercicio);
 
     formulario.addEventListener("submit", function (evento) {
       evento.preventDefault();
@@ -112,11 +141,10 @@
         return;
       }
 
-      const elemento = document.createElement("li");
-      elemento.textContent = nombre;
-      lista.appendChild(elemento);
+      ejercicios.push(nombre);
+      guardarEjercicios();
+      mostrarEjercicio(nombre);
 
-      mensajeVacio.hidden = true;
       campo.value = "";
       campo.focus();
     });
