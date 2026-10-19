@@ -1,0 +1,357 @@
+/* ============================================================
+   ASPECTO DE LA APP
+   Aquí solo hay colores, tamaños y posiciones. La lógica está en app.js.
+   ============================================================ */
+
+* {
+  box-sizing: border-box;
+}
+
+/* Lo que tiene el atributo "hidden" no se ve nunca */
+[hidden] {
+  display: none !important;
+}
+
+body {
+  margin: 0;
+  padding: 20px 16px;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: #f2f4f7;
+  color: #1d2433;
+}
+
+.contenedor {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+h1 {
+  text-align: center;
+  font-size: 1.8rem;
+  margin: 24px 0 32px;
+}
+
+h2 {
+  font-size: 1.6rem;
+  margin: 16px 0 24px;
+}
+
+h3 {
+  font-size: 1.15rem;
+  margin: 28px 0 12px;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* ---------- Botones ---------- */
+
+/* Botones grandes de la pantalla de inicio */
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.boton-grande {
+  width: 100%;
+  padding: 24px 20px;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #fff;
+  background: #ff5a1f;
+  border: none;
+  border-radius: 14px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.boton-grande:active {
+  background: #e04a12;
+}
+
+/* Botón naranja normal (por ejemplo, "Crear rutina" o "Guardar") */
+.boton-principal {
+  width: 100%;
+  margin-top: 16px;
+  padding: 16px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #fff;
+  background: #ff5a1f;
+  border: none;
+  border-radius: 12px;
+}
+
+.boton-principal:active {
+  background: #e04a12;
+}
+
+/* Botón blanco con borde (por ejemplo, "Añadir ejercicio") */
+.boton-secundario {
+  width: 100%;
+  margin-top: 12px;
+  padding: 16px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #ff5a1f;
+  background: #fff;
+  border: 2px dashed #ffb899;
+  border-radius: 12px;
+}
+
+.boton-secundario:active {
+  background: #fff0ea;
+}
+
+/* Botón para volver a la pantalla anterior */
+.boton-volver {
+  padding: 12px 16px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ff5a1f;
+  background: #fff;
+  border: 1px solid #c8cdd6;
+  border-radius: 10px;
+}
+
+.boton-volver:active {
+  background: #f2f4f7;
+}
+
+/* Botón pequeño "Quitar" */
+.boton-quitar {
+  flex-shrink: 0;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #c62828;
+  background: #fdecec;
+  border: none;
+  border-radius: 8px;
+}
+
+.boton-quitar:active {
+  background: #f8d4d4;
+}
+
+/* Las dos opciones de "Añadir ejercicio" */
+.opciones-anadir {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.boton-opcion {
+  flex: 1;
+  padding: 16px 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1d2433;
+  background: #fff;
+  border: 1px solid #c8cdd6;
+  border-radius: 12px;
+}
+
+.boton-opcion:active {
+  background: #e9ecf1;
+}
+
+/* ---------- Textos ---------- */
+
+.aviso {
+  text-align: center;
+  font-size: 1.2rem;
+  color: #7a8291;
+  margin-top: 48px;
+}
+
+.vacio {
+  margin: 0;
+  padding: 18px 16px;
+  text-align: center;
+  color: #7a8291;
+  background: #fff;
+  border-radius: 12px;
+}
+
+/* Mensaje de error (por ejemplo, "Escribe un nombre") */
+.error {
+  margin: 12px 0 0;
+  padding: 12px 14px;
+  color: #c62828;
+  background: #fdecec;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+/* ---------- Formularios ---------- */
+
+.etiqueta {
+  display: block;
+  margin: 20px 0 8px;
+  font-weight: 600;
+}
+
+.campo {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  font-size: 1rem; /* 16px o más: así el iPhone no hace zoom al escribir */
+  font-family: inherit;
+  border: 1px solid #c8cdd6;
+  border-radius: 10px;
+  background: #fff;
+  color: inherit;
+}
+
+.campo:focus {
+  outline: 2px solid #ff5a1f;
+  border-color: transparent;
+}
+
+/* Opciones de tipo de medición (peso, peso corporal, tiempo) */
+.opciones-medicion {
+  margin: 0;
+  padding: 0;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.opciones-medicion legend {
+  padding: 0;
+  margin: 20px 0 8px;
+  font-weight: 600;
+}
+
+.opcion-medicion {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #c8cdd6;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.opcion-medicion:has(input:checked) {
+  border: 2px solid #ff5a1f;
+  background: #fff0ea;
+}
+
+.opcion-medicion input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: #ff5a1f;
+}
+
+/* ---------- Tarjetas de rutina ---------- */
+
+.lista-tarjetas {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tarjeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 18px 16px;
+  text-align: left;
+  color: inherit;
+  background: #fff;
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.tarjeta:active {
+  background: #e9ecf1;
+}
+
+.tarjeta:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.tarjeta-nombre {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.tarjeta-cantidad {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.95rem;
+  color: #7a8291;
+}
+
+.tarjeta-flecha {
+  flex-shrink: 0;
+  font-size: 1.5rem;
+  color: #c8cdd6;
+}
+
+.tarjeta-marca {
+  flex-shrink: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #7a8291;
+}
+
+/* ---------- Listas de ejercicios ---------- */
+
+.lista-ejercicios {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  counter-reset: ejercicio;
+}
+
+.lista-ejercicios li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  padding: 14px 16px;
+  margin-bottom: 8px;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  word-break: break-word;
+  counter-increment: ejercicio;
+}
+
+/* Número delante de cada ejercicio */
+.lista-ejercicios li::before {
+  content: counter(ejercicio);
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #ff5a1f;
+  background: #fff0ea;
+  border-radius: 50%;
+}
+
+/* El nombre ocupa todo el espacio y empuja el botón "Quitar" a la derecha */
+.lista-ejercicios .ejercicio-nombre {
+  flex: 1;
+}
+
+/* Resultados del buscador */
+.resultados {
+  margin-top: 16px;
+}

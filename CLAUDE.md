@@ -20,8 +20,30 @@ App web sencilla para gente que va al gimnasio. Está pensada para principiantes
 
 ## Estado actual
 
-- `index.html` es una app de varias pantallas en un solo archivo. Cada pantalla es una `<section class="pantalla">` y solo se ve una a la vez. La pantalla actual depende del final de la dirección (`#rutinas`, `#crear-rutina`, `#entrenar`, `#historial`, `#predeterminada-<id>`, `#mia-<id>`; sin nada = inicio), así que el botón "atrás" del navegador también funciona. Las pantallas se registran en `PANTALLAS`; cada una tiene un `padre`, que es adonde lleva "Volver" si se abrió la página directamente en ella.
-- Inicio: título y tres botones grandes ("Rutinas", "Empezar entrenamiento", "Historial / Progreso").
-- Rutinas: secciones "Rutinas predeterminadas" y "Mis rutinas", con una tarjeta por rutina (nombre y número de ejercicios). Al pulsar una tarjeta se abre el detalle (nombre y lista de ejercicios). "Crear rutina", "Empezar entrenamiento" e "Historial / Progreso" muestran "Próximamente".
-- Las rutinas predeterminadas están en la constante `RUTINAS_PREDETERMINADAS` del código (provisionales, solo nombres de ejercicios) y **nunca** se guardan en `localStorage`, para poder cambiarlas sin afectar a los datos de cada persona.
-- Las rutinas propias se leen de `localStorage` con la clave `"misRutinas"` (lista de `{ id, nombre, ejercicios }`). Todavía no se pueden crear. (Una versión anterior usaba la clave `"ejercicios"`; ese código se quitó.)
+### Archivos
+
+Un solo HTML, con el aspecto separado de la lógica:
+
+- `index.html`: la estructura de todas las pantallas. Cada pantalla es una `<section class="pantalla">` y solo se ve una a la vez.
+- `estilos.css`: todo el aspecto (colores, tamaños). La lógica no pone estilos; solo usa clases y el atributo `hidden`.
+- `ejercicios.js`: `EJERCICIOS_BASE`, la lista inicial de ejercicios (provisional), con `{ id, nombre, grupo, medicion }`. `medicion` es `"peso"`, `"peso-corporal"` o `"tiempo"`.
+- `rutinas-predeterminadas.js`: `RUTINAS_PREDETERMINADAS` (provisionales), con `{ id, nombre, ejercicios }`, donde `ejercicios` son ids de `EJERCICIOS_BASE`.
+- `app.js`: toda la lógica. Se carga después de los dos archivos de datos.
+
+### Navegación
+
+La pantalla actual depende del final de la dirección (`#rutinas`, `#crear-rutina`, `#buscar-ejercicio`, `#nuevo-ejercicio`, `#entrenar`, `#historial`, `#predeterminada-<id>`, `#mia-<id>`; sin nada = inicio), así que el botón "atrás" del navegador también funciona. Las pantallas se registran en `PANTALLAS` (en `app.js`): cada una tiene un `padre`, que es adonde lleva "Volver" si se abrió la página directamente en ella, y opcionalmente `alEntrar`, que la prepara cada vez que se muestra.
+
+### Pantallas
+
+- Inicio: título y tres botones grandes ("Rutinas", "Empezar entrenamiento", "Historial / Progreso"). Los dos últimos muestran "Próximamente".
+- Rutinas: secciones "Rutinas predeterminadas" y "Mis rutinas", con una tarjeta por rutina (nombre y número de ejercicios). Al pulsar una tarjeta se abre el detalle (nombre y lista de ejercicios).
+- Crear rutina: nombre, lista de ejercicios añadidos (con "Quitar") y "Añadir ejercicio", que da dos opciones: "Buscar en la lista" (buscador que filtra por nombre o grupo, sin importar tildes ni mayúsculas) y "Crear ejercicio" (nombre y tipo de medición; se guarda y se añade a la rutina). "Guardar" exige nombre y al menos un ejercicio. La rutina en preparación vive en memoria hasta que se guarda.
+
+### Datos
+
+- Lo fijo (ejercicios base y rutinas predeterminadas) vive en el código y **nunca** se guarda en `localStorage`, para poder cambiarlo sin afectar a los datos de cada persona.
+- `localStorage` `"misRutinas"`: rutinas propias, `{ id, nombre, ejercicios }` con ids de ejercicios. Una rutina guarda solo sus ejercicios, sin series, repeticiones ni pesos.
+- `localStorage` `"misEjercicios"`: ejercicios creados por la persona, mismo formato que los base (`grupo: "Mis ejercicios"`). Aparecen también en el buscador.
+- Las rutinas guardan ids de ejercicios: no cambiar el `id` de un ejercicio de `EJERCICIOS_BASE` que ya pueda estar en uso. Si no se encuentra un id, se muestra "Ejercicio no encontrado".
+- (Una versión anterior usaba la clave `"ejercicios"`; ese código se quitó.)

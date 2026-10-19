@@ -4,202 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mi app de gym</title>
-  <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      padding: 20px 16px;
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      background: #f2f4f7;
-      color: #1d2433;
-    }
-
-    .contenedor {
-      max-width: 480px;
-      margin: 0 auto;
-    }
-
-    /* Solo se ve la pantalla que no está oculta */
-    .pantalla[hidden] {
-      display: none;
-    }
-
-    h1 {
-      text-align: center;
-      font-size: 1.8rem;
-      margin: 24px 0 32px;
-    }
-
-    h2 {
-      font-size: 1.6rem;
-      margin: 16px 0 24px;
-    }
-
-    h3 {
-      font-size: 1.15rem;
-      margin: 28px 0 12px;
-    }
-
-    button {
-      font-family: inherit;
-      cursor: pointer;
-    }
-
-    /* Botones grandes de la pantalla de inicio */
-    .menu {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .boton-grande {
-      width: 100%;
-      padding: 24px 20px;
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: #fff;
-      background: #ff5a1f;
-      border: none;
-      border-radius: 14px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
-    }
-
-    .boton-grande:active {
-      background: #e04a12;
-    }
-
-    /* Botón naranja normal (por ejemplo, "Crear rutina") */
-    .boton-principal {
-      width: 100%;
-      margin-top: 16px;
-      padding: 16px;
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: #fff;
-      background: #ff5a1f;
-      border: none;
-      border-radius: 12px;
-    }
-
-    .boton-principal:active {
-      background: #e04a12;
-    }
-
-    /* Botón para volver a la pantalla anterior */
-    .boton-volver {
-      padding: 12px 16px;
-      font-size: 1rem;
-      font-weight: 600;
-      color: #ff5a1f;
-      background: #fff;
-      border: 1px solid #c8cdd6;
-      border-radius: 10px;
-    }
-
-    .boton-volver:active {
-      background: #f2f4f7;
-    }
-
-    .aviso {
-      text-align: center;
-      font-size: 1.2rem;
-      color: #7a8291;
-      margin-top: 48px;
-    }
-
-    /* Tarjetas de rutina */
-    .lista-tarjetas {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .tarjeta {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      width: 100%;
-      padding: 18px 16px;
-      text-align: left;
-      color: inherit;
-      background: #fff;
-      border: none;
-      border-radius: 12px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-    }
-
-    .tarjeta:active {
-      background: #e9ecf1;
-    }
-
-    .tarjeta-nombre {
-      display: block;
-      font-size: 1.1rem;
-      font-weight: 600;
-      word-break: break-word;
-    }
-
-    .tarjeta-cantidad {
-      display: block;
-      margin-top: 4px;
-      font-size: 0.95rem;
-      color: #7a8291;
-    }
-
-    .tarjeta-flecha {
-      font-size: 1.5rem;
-      color: #c8cdd6;
-    }
-
-    .vacio {
-      margin: 0;
-      padding: 18px 16px;
-      text-align: center;
-      color: #7a8291;
-      background: #fff;
-      border-radius: 12px;
-    }
-
-    /* Lista de ejercicios en el detalle de una rutina */
-    .lista-ejercicios {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      counter-reset: ejercicio;
-    }
-
-    .lista-ejercicios li {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      background: #fff;
-      padding: 14px 16px;
-      margin-bottom: 8px;
-      border-radius: 10px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-      word-break: break-word;
-      counter-increment: ejercicio;
-    }
-
-    /* Número delante de cada ejercicio */
-    .lista-ejercicios li::before {
-      content: counter(ejercicio);
-      flex-shrink: 0;
-      width: 28px;
-      height: 28px;
-      line-height: 28px;
-      text-align: center;
-      font-weight: 600;
-      font-size: 0.9rem;
-      color: #ff5a1f;
-      background: #fff0ea;
-      border-radius: 50%;
-    }
-  </style>
+  <link rel="stylesheet" href="estilos.css">
 </head>
 <body>
   <div class="contenedor">
@@ -226,7 +31,7 @@
       <div class="lista-tarjetas" id="lista-mis-rutinas"></div>
       <p class="vacio" id="mis-rutinas-vacio">Todavía no tienes rutinas propias</p>
 
-      <button class="boton-principal" data-ir-a="crear-rutina">Crear rutina</button>
+      <button class="boton-principal" id="boton-crear-rutina">Crear rutina</button>
     </section>
 
     <!-- Pantalla de detalle de una rutina -->
@@ -234,6 +39,69 @@
       <button class="boton-volver">← Volver</button>
       <h2 id="detalle-nombre"></h2>
       <ol class="lista-ejercicios" id="detalle-ejercicios"></ol>
+    </section>
+
+    <!-- Pantalla para crear una rutina -->
+    <section class="pantalla" id="pantalla-crear-rutina" hidden>
+      <button class="boton-volver">← Volver</button>
+      <h2>Crear rutina</h2>
+
+      <label class="etiqueta" for="nombre-rutina">Nombre de la rutina</label>
+      <input class="campo" type="text" id="nombre-rutina" placeholder="Por ejemplo: Piernas lunes" autocomplete="off">
+
+      <h3>Ejercicios</h3>
+      <ol class="lista-ejercicios" id="ejercicios-nueva-rutina"></ol>
+      <p class="vacio" id="nueva-rutina-vacio">Todavía no has añadido ejercicios.</p>
+
+      <button class="boton-secundario" id="boton-anadir-ejercicio">+ Añadir ejercicio</button>
+      <div class="opciones-anadir" id="opciones-anadir" hidden>
+        <button class="boton-opcion" data-ir-a="buscar-ejercicio">Buscar en la lista</button>
+        <button class="boton-opcion" data-ir-a="nuevo-ejercicio">Crear ejercicio</button>
+      </div>
+
+      <p class="error" id="error-rutina" role="alert" hidden></p>
+      <button class="boton-principal" id="boton-guardar-rutina">Guardar</button>
+    </section>
+
+    <!-- Pantalla para buscar un ejercicio y añadirlo a la rutina -->
+    <section class="pantalla" id="pantalla-buscar-ejercicio" hidden>
+      <button class="boton-volver">← Volver</button>
+      <h2>Buscar ejercicio</h2>
+
+      <input class="campo" type="search" id="campo-buscar" placeholder="Escribe para buscar…" autocomplete="off" aria-label="Buscar ejercicio">
+
+      <div class="lista-tarjetas resultados" id="resultados-busqueda"></div>
+      <p class="vacio resultados" id="busqueda-vacia" hidden>No hay ejercicios con ese nombre. Puedes volver y usar «Crear ejercicio».</p>
+    </section>
+
+    <!-- Pantalla para crear un ejercicio nuevo -->
+    <section class="pantalla" id="pantalla-nuevo-ejercicio" hidden>
+      <button class="boton-volver">← Volver</button>
+      <h2>Crear ejercicio</h2>
+
+      <form id="formulario-ejercicio" novalidate>
+        <label class="etiqueta" for="nombre-ejercicio">Nombre del ejercicio</label>
+        <input class="campo" type="text" id="nombre-ejercicio" placeholder="Por ejemplo: Remo en máquina" autocomplete="off">
+
+        <fieldset class="opciones-medicion">
+          <legend>¿Cómo se mide?</legend>
+          <label class="opcion-medicion">
+            <input type="radio" name="medicion" value="peso" checked>
+            Peso (kg)
+          </label>
+          <label class="opcion-medicion">
+            <input type="radio" name="medicion" value="peso-corporal">
+            Peso corporal (solo repeticiones)
+          </label>
+          <label class="opcion-medicion">
+            <input type="radio" name="medicion" value="tiempo">
+            Tiempo
+          </label>
+        </fieldset>
+
+        <p class="error" id="error-ejercicio" role="alert" hidden></p>
+        <button class="boton-principal" type="submit">Crear y añadir a la rutina</button>
+      </form>
     </section>
 
     <!-- Pantalla para lo que todavía no está hecho -->
@@ -245,227 +113,9 @@
 
   </div>
 
-  <script>
-    // ============================================================
-    // RUTINAS PREDETERMINADAS (provisionales)
-    // Para cambiarlas, edita esta lista. Cada rutina necesita:
-    //   - id: un nombre corto sin espacios ni tildes, distinto en cada rutina
-    //   - nombre: el que se ve en la app
-    //   - ejercicios: la lista de ejercicios, en orden
-    // Estas rutinas viven aquí, en el código, y no se guardan en el navegador.
-    // Así se pueden cambiar sin tocar las rutinas que haya creado cada persona.
-    // ============================================================
-    const RUTINAS_PREDETERMINADAS = [
-      {
-        id: "cuerpo-completo-a",
-        nombre: "Cuerpo completo A",
-        ejercicios: [
-          "Sentadilla",
-          "Press de banca",
-          "Remo con mancuerna",
-          "Press militar con mancuernas",
-          "Plancha"
-        ]
-      },
-      {
-        id: "cuerpo-completo-b",
-        nombre: "Cuerpo completo B",
-        ejercicios: [
-          "Prensa de piernas",
-          "Peso muerto rumano con mancuernas",
-          "Jalón al pecho",
-          "Press inclinado con mancuernas",
-          "Crunch abdominal"
-        ]
-      },
-      {
-        id: "tren-superior",
-        nombre: "Tren superior",
-        ejercicios: [
-          "Press de banca",
-          "Jalón al pecho",
-          "Press militar con mancuernas",
-          "Remo en polea baja",
-          "Curl de bíceps con mancuernas",
-          "Extensión de tríceps en polea"
-        ]
-      }
-    ];
-
-    // ============================================================
-    // RUTINAS PROPIAS (las que crea cada persona)
-    // Se guardan en el navegador con esta clave, separadas de las predeterminadas.
-    // ============================================================
-    const CLAVE_MIS_RUTINAS = "misRutinas";
-
-    // Lee las rutinas propias guardadas en el navegador (o una lista vacía si no hay)
-    function cargarMisRutinas() {
-      try {
-        const guardadas = localStorage.getItem(CLAVE_MIS_RUTINAS);
-        const rutinas = guardadas ? JSON.parse(guardadas) : [];
-        return Array.isArray(rutinas) ? rutinas : [];
-      } catch (error) {
-        return [];
-      }
-    }
-
-    // Busca una rutina por su tipo ("predeterminada" o "mia") y su id
-    function buscarRutina(tipo, id) {
-      const lista = tipo === "predeterminada" ? RUTINAS_PREDETERMINADAS : cargarMisRutinas();
-      return lista.find(function (rutina) {
-        return rutina.id === id;
-      });
-    }
-
-    // Texto con el número de ejercicios: "1 ejercicio", "5 ejercicios"...
-    function textoCantidad(rutina) {
-      const cantidad = rutina.ejercicios.length;
-      return cantidad === 1 ? "1 ejercicio" : cantidad + " ejercicios";
-    }
-
-    // Crea la tarjeta de una rutina. Al pulsarla, abre su detalle.
-    function crearTarjeta(rutina, tipo) {
-      const tarjeta = document.createElement("button");
-      tarjeta.className = "tarjeta";
-
-      const textos = document.createElement("span");
-      const nombre = document.createElement("span");
-      nombre.className = "tarjeta-nombre";
-      nombre.textContent = rutina.nombre;
-      const cantidad = document.createElement("span");
-      cantidad.className = "tarjeta-cantidad";
-      cantidad.textContent = textoCantidad(rutina);
-      textos.appendChild(nombre);
-      textos.appendChild(cantidad);
-
-      const flecha = document.createElement("span");
-      flecha.className = "tarjeta-flecha";
-      flecha.textContent = "›";
-
-      tarjeta.appendChild(textos);
-      tarjeta.appendChild(flecha);
-
-      tarjeta.addEventListener("click", function () {
-        irA(tipo + "-" + rutina.id);
-      });
-
-      return tarjeta;
-    }
-
-    // Rellena la pantalla de rutinas con las tarjetas
-    function pintarRutinas() {
-      const listaPredeterminadas = document.getElementById("lista-predeterminadas");
-      listaPredeterminadas.innerHTML = "";
-      RUTINAS_PREDETERMINADAS.forEach(function (rutina) {
-        listaPredeterminadas.appendChild(crearTarjeta(rutina, "predeterminada"));
-      });
-
-      const misRutinas = cargarMisRutinas();
-      const listaMisRutinas = document.getElementById("lista-mis-rutinas");
-      listaMisRutinas.innerHTML = "";
-      misRutinas.forEach(function (rutina) {
-        listaMisRutinas.appendChild(crearTarjeta(rutina, "mia"));
-      });
-      document.getElementById("mis-rutinas-vacio").hidden = misRutinas.length > 0;
-    }
-
-    // Rellena la pantalla de detalle con el nombre y los ejercicios de una rutina
-    function pintarDetalle(rutina) {
-      document.getElementById("detalle-nombre").textContent = rutina.nombre;
-      const lista = document.getElementById("detalle-ejercicios");
-      lista.innerHTML = "";
-      rutina.ejercicios.forEach(function (ejercicio) {
-        const elemento = document.createElement("li");
-        elemento.textContent = ejercicio;
-        lista.appendChild(elemento);
-      });
-    }
-
-    // ============================================================
-    // NAVEGACIÓN ENTRE PANTALLAS
-    // Cada pantalla tiene un nombre corto, que es el que aparece al final
-    // de la dirección de la página (por ejemplo: index.html#rutinas).
-    // "padre" es la pantalla a la que lleva el botón "Volver".
-    // ============================================================
-    const PANTALLAS = {
-      inicio: { id: "pantalla-inicio" },
-      rutinas: { id: "pantalla-rutinas", padre: "inicio" },
-      "crear-rutina": { id: "pantalla-proximamente", titulo: "Crear rutina", padre: "rutinas" },
-      entrenar: { id: "pantalla-proximamente", titulo: "Empezar entrenamiento", padre: "inicio" },
-      historial: { id: "pantalla-proximamente", titulo: "Historial / Progreso", padre: "inicio" }
-    };
-
-    // Averigua qué pantalla toca según la dirección.
-    // Las rutinas usan nombres como "predeterminada-cuerpo-completo-a" o "mia-123".
-    function pantallaActual() {
-      const nombre = location.hash.slice(1);
-
-      const partes = nombre.match(/^(predeterminada|mia)-(.+)$/);
-      if (partes) {
-        const rutina = buscarRutina(partes[1], partes[2]);
-        if (rutina) {
-          return { id: "pantalla-detalle", padre: "rutinas", rutina: rutina };
-        }
-        return PANTALLAS.rutinas;
-      }
-
-      return PANTALLAS[nombre] || PANTALLAS.inicio;
-    }
-
-    // Muestra la pantalla que indica la dirección y oculta las demás
-    function mostrarPantallaActual() {
-      const pantalla = pantallaActual();
-
-      if (pantalla.id === "pantalla-rutinas") {
-        pintarRutinas();
-      }
-      if (pantalla.rutina) {
-        pintarDetalle(pantalla.rutina);
-      }
-      if (pantalla.titulo) {
-        document.getElementById("titulo-proximamente").textContent = pantalla.titulo;
-      }
-
-      document.querySelectorAll(".pantalla").forEach(function (seccion) {
-        seccion.hidden = seccion.id !== pantalla.id;
-      });
-
-      window.scrollTo(0, 0);
-    }
-
-    // Va a otra pantalla. Se apunta en el historial del navegador que
-    // hemos llegado desde dentro de la app, para que "Volver" sepa qué hacer.
-    function irA(nombre) {
-      history.pushState({ dentroDeLaApp: true }, "", "#" + nombre);
-      mostrarPantallaActual();
-    }
-
-    // Botón "Volver": si llegamos desde la app, hace lo mismo que la flecha
-    // de atrás del navegador. Si se abrió la página directamente en esta
-    // pantalla, va a su pantalla "padre".
-    function volver() {
-      if (history.state && history.state.dentroDeLaApp) {
-        history.back();
-      } else {
-        history.replaceState(null, "", "#" + pantallaActual().padre);
-        mostrarPantallaActual();
-      }
-    }
-
-    document.querySelectorAll("[data-ir-a]").forEach(function (boton) {
-      boton.addEventListener("click", function () {
-        irA(boton.dataset.irA);
-      });
-    });
-
-    document.querySelectorAll(".boton-volver").forEach(function (boton) {
-      boton.addEventListener("click", volver);
-    });
-
-    // Cuando se usa la flecha de atrás (o adelante) del navegador
-    window.addEventListener("popstate", mostrarPantallaActual);
-
-    mostrarPantallaActual();
-  </script>
+  <!-- Primero los datos, después la lógica que los usa -->
+  <script src="ejercicios.js"></script>
+  <script src="rutinas-predeterminadas.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
