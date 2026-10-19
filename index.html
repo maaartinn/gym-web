@@ -39,18 +39,25 @@
       <button class="boton-volver">← Volver</button>
       <h2 id="detalle-nombre"></h2>
       <ol class="lista-ejercicios" id="detalle-ejercicios"></ol>
+
+      <!-- Solo se ve en las rutinas propias -->
+      <div class="acciones-rutina" id="acciones-rutina" hidden>
+        <button class="boton-opcion" id="boton-editar-rutina">Editar</button>
+        <button class="boton-peligro" id="boton-borrar-rutina">Borrar</button>
+      </div>
+      <p class="error" id="error-detalle" role="alert" hidden></p>
     </section>
 
-    <!-- Pantalla para crear una rutina -->
+    <!-- Pantalla para crear una rutina (y también para editarla) -->
     <section class="pantalla" id="pantalla-crear-rutina" hidden>
       <button class="boton-volver">← Volver</button>
-      <h2>Crear rutina</h2>
+      <h2 id="titulo-crear-rutina">Crear rutina</h2>
 
       <label class="etiqueta" for="nombre-rutina">Nombre de la rutina</label>
       <input class="campo" type="text" id="nombre-rutina" placeholder="Por ejemplo: Piernas lunes" autocomplete="off">
 
       <h3>Ejercicios</h3>
-      <ol class="lista-ejercicios" id="ejercicios-nueva-rutina"></ol>
+      <ol class="lista-ejercicios lista-editable" id="ejercicios-nueva-rutina"></ol>
       <p class="vacio" id="nueva-rutina-vacio">Todavía no has añadido ejercicios.</p>
 
       <button class="boton-secundario" id="boton-anadir-ejercicio">+ Añadir ejercicio</button>

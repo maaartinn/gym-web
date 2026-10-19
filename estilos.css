@@ -136,6 +136,59 @@ button {
   background: #f8d4d4;
 }
 
+/* Botones pequeños para subir o bajar un ejercicio */
+.boton-mover {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1d2433;
+  background: #f2f4f7;
+  border: none;
+  border-radius: 8px;
+}
+
+.boton-mover:active {
+  background: #e2e6ec;
+}
+
+.boton-mover:disabled {
+  cursor: default;
+  opacity: 0.3;
+}
+
+/* Grupo de botones a la derecha de cada ejercicio (subir, bajar, quitar) */
+.controles-ejercicio {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Botón rojo para acciones que borran algo */
+.boton-peligro {
+  flex: 1;
+  padding: 16px 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #c62828;
+  background: #fdecec;
+  border: 1px solid #f3c1c1;
+  border-radius: 12px;
+}
+
+.boton-peligro:active {
+  background: #f8d4d4;
+}
+
+/* Botones "Editar" y "Borrar" del detalle de una rutina */
+.acciones-rutina {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
 /* Las dos opciones de "Añadir ejercicio" */
 .opciones-anadir {
   display: flex;
@@ -346,9 +399,16 @@ button {
   border-radius: 50%;
 }
 
-/* El nombre ocupa todo el espacio y empuja el botón "Quitar" a la derecha */
+/* El nombre ocupa todo el espacio y empuja los botones a la derecha */
 .lista-ejercicios .ejercicio-nombre {
   flex: 1;
+  min-width: 0;
+}
+
+/* En "Crear rutina" hay más botones: un poco menos de relleno */
+.lista-editable li {
+  padding: 10px 10px 10px 14px;
+  gap: 10px;
 }
 
 /* Resultados del buscador */

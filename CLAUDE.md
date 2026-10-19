@@ -37,8 +37,9 @@ La pantalla actual depende del final de la dirección (`#rutinas`, `#crear-rutin
 ### Pantallas
 
 - Inicio: título y tres botones grandes ("Rutinas", "Empezar entrenamiento", "Historial / Progreso"). Los dos últimos muestran "Próximamente".
-- Rutinas: secciones "Rutinas predeterminadas" y "Mis rutinas", con una tarjeta por rutina (nombre y número de ejercicios). Al pulsar una tarjeta se abre el detalle (nombre y lista de ejercicios).
-- Crear rutina: nombre, lista de ejercicios añadidos (con "Quitar") y "Añadir ejercicio", que da dos opciones: "Buscar en la lista" (buscador que filtra por nombre o grupo, sin importar tildes ni mayúsculas) y "Crear ejercicio" (nombre y tipo de medición; se guarda y se añade a la rutina). "Guardar" exige nombre y al menos un ejercicio. La rutina en preparación vive en memoria hasta que se guarda.
+- Rutinas: secciones "Rutinas predeterminadas" y "Mis rutinas", con una tarjeta por rutina (nombre y número de ejercicios). Al pulsar una tarjeta se abre el detalle (nombre y lista de ejercicios). En las rutinas propias, el detalle tiene "Editar" y "Borrar" (con `confirm()` antes de borrar); en las predeterminadas, no.
+- Crear rutina: nombre, lista de ejercicios añadidos (con subir ↑, bajar ↓ y "Quitar") y "Añadir ejercicio", que da dos opciones: "Buscar en la lista" (buscador que filtra por nombre o grupo, sin importar tildes ni mayúsculas) y "Crear ejercicio" (nombre y tipo de medición; se guarda y se añade a la rutina). "Guardar" exige nombre y al menos un ejercicio. La rutina en preparación vive en memoria hasta que se guarda.
+- Editar rutina (`#editar-mia-<id>`): es la misma pantalla y el mismo código que "Crear rutina", con los datos cargados. `idRutinaEnEdicion` indica si se crea (`null`) o se edita. Toda la escritura pasa por `guardarRutina()`, que reemplaza la rutina si su id ya existe o la añade si es nueva.
 
 ### Datos
 

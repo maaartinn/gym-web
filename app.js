@@ -138,8 +138,14 @@ function pintarRutinas() {
   document.getElementById("mis-rutinas-vacio").hidden = misRutinas.length > 0;
 }
 
-// Rellena la pantalla de detalle con el nombre y los ejercicios de una rutina
-function pintarDetalle(rutina) {
+// La rutina que se está viendo en la pantalla de detalle
+let rutinaEnDetalle = null;
+
+// Rellena la pantalla de detalle con el nombre y los ejercicios de una rutina.
+// "Editar" y "Borrar" solo aparecen en las rutinas propias.
+function pintarDetalle(rutina, tipo) {
+  rutinaEnDetalle = rutina;
+
   document.getElementById("detalle-nombre").textContent = rutina.nombre;
   const lista = document.getElementById("detalle-ejercicios");
   lista.innerHTML = "";
@@ -148,15 +154,44 @@ function pintarDetalle(rutina) {
     elemento.textContent = nombreDeEjercicio(id);
     lista.appendChild(elemento);
   });
+
+  document.getElementById("acciones-rutina").hidden = tipo !== "mia";
+  document.getElementById("error-detalle").hidden = true;
 }
+
+document.getElementById("boton-editar-rutina").addEventListener("click", function () {
+  empezarEdicion(rutinaEnDetalle);
+  irA("editar-mia-" + rutinaEnDetalle.id);
+});
+
+// "Borrar" pregunta antes de eliminar la rutina
+document.getElementById("boton-borrar-rutina").addEventListener("click", function () {
+  const seguro = confirm("¿Seguro que quieres borrar la rutina «" + rutinaEnDetalle.nombre + "»? No se puede deshacer.");
+  if (!seguro) {
+    return;
+  }
+
+  const misRutinas = leerLista(CLAVE_MIS_RUTINAS).filter(function (rutina) {
+    return rutina.id !== rutinaEnDetalle.id;
+  });
+
+  if (!guardarLista(CLAVE_MIS_RUTINAS, misRutinas)) {
+    mostrarError(document.getElementById("error-detalle"), "No se ha podido borrar. Puede que tu navegador no permita guardar datos.");
+    return;
+  }
+
+  volver(); // De vuelta a "Rutinas", donde ya no aparece
+});
 
 
 // ============================================================
-// CREAR RUTINA
-// Mientras se crea, la rutina vive solo aquí (en memoria).
+// CREAR Y EDITAR RUTINA
+// Las dos cosas usan la misma pantalla y el mismo código.
+// Mientras se prepara, la rutina vive solo aquí (en memoria).
 // Se guarda en el navegador al pulsar "Guardar".
 // ============================================================
 let ejerciciosNuevaRutina = []; // ids de los ejercicios añadidos, en orden
+let idRutinaEnEdicion = null;   // null = rutina nueva; si no, el id de la rutina que se edita
 
 const campoNombreRutina = document.getElementById("nombre-rutina");
 const errorRutina = document.getElementById("error-rutina");
@@ -166,17 +201,47 @@ function mostrarError(elemento, mensaje) {
   elemento.hidden = false;
 }
 
-// Deja la pantalla "Crear rutina" en blanco
+// Deja la pantalla en blanco, para crear una rutina nueva
 function empezarRutinaNueva() {
+  idRutinaEnEdicion = null;
   ejerciciosNuevaRutina = [];
   campoNombreRutina.value = "";
   errorRutina.hidden = true;
 }
 
-// Muestra los ejercicios añadidos, cada uno con su botón "Quitar"
+// Carga en la pantalla los datos de una rutina que ya existe, para editarla
+function empezarEdicion(rutina) {
+  idRutinaEnEdicion = rutina.id;
+  ejerciciosNuevaRutina = rutina.ejercicios.slice(); // una copia: no se toca la original hasta guardar
+  campoNombreRutina.value = rutina.nombre;
+  errorRutina.hidden = true;
+}
+
+// Cambia de sitio dos ejercicios de la lista
+function intercambiar(posicionA, posicionB) {
+  const guardado = ejerciciosNuevaRutina[posicionA];
+  ejerciciosNuevaRutina[posicionA] = ejerciciosNuevaRutina[posicionB];
+  ejerciciosNuevaRutina[posicionB] = guardado;
+  pintarCrearRutina();
+}
+
+function crearBotonPequeno(clase, texto, descripcion, alPulsar) {
+  const boton = document.createElement("button");
+  boton.className = clase;
+  boton.textContent = texto;
+  boton.setAttribute("aria-label", descripcion);
+  boton.addEventListener("click", alPulsar);
+  return boton;
+}
+
+// Muestra los ejercicios añadidos, cada uno con sus botones subir, bajar y quitar
 function pintarCrearRutina() {
+  document.getElementById("titulo-crear-rutina").textContent =
+    idRutinaEnEdicion ? "Editar rutina" : "Crear rutina";
+
   const lista = document.getElementById("ejercicios-nueva-rutina");
   lista.innerHTML = "";
+  const ultima = ejerciciosNuevaRutina.length - 1;
 
   ejerciciosNuevaRutina.forEach(function (id, posicion) {
     const elemento = document.createElement("li");
@@ -185,16 +250,29 @@ function pintarCrearRutina() {
     nombre.className = "ejercicio-nombre";
     nombre.textContent = nombreDeEjercicio(id);
 
-    const quitar = document.createElement("button");
-    quitar.className = "boton-quitar";
-    quitar.textContent = "Quitar";
-    quitar.addEventListener("click", function () {
+    const controles = document.createElement("span");
+    controles.className = "controles-ejercicio";
+
+    const subir = crearBotonPequeno("boton-mover", "↑", "Subir", function () {
+      intercambiar(posicion, posicion - 1);
+    });
+    subir.disabled = posicion === 0;
+
+    const bajar = crearBotonPequeno("boton-mover", "↓", "Bajar", function () {
+      intercambiar(posicion, posicion + 1);
+    });
+    bajar.disabled = posicion === ultima;
+
+    const quitar = crearBotonPequeno("boton-quitar", "Quitar", "Quitar", function () {
       ejerciciosNuevaRutina.splice(posicion, 1);
       pintarCrearRutina();
     });
 
+    controles.appendChild(subir);
+    controles.appendChild(bajar);
+    controles.appendChild(quitar);
     elemento.appendChild(nombre);
-    elemento.appendChild(quitar);
+    elemento.appendChild(controles);
     lista.appendChild(elemento);
   });
 
@@ -202,6 +280,15 @@ function pintarCrearRutina() {
   document.getElementById("opciones-anadir").hidden = true;
 }
 
+// Al entrar en "Crear rutina": si quedaba a medias una edición, se descarta
+function abrirCrearRutina() {
+  if (idRutinaEnEdicion !== null) {
+    empezarRutinaNueva();
+  }
+  pintarCrearRutina();
+}
+
+// Guarda la rutina, tanto si es nueva como si se está editando
 function guardarRutina() {
   const nombre = campoNombreRutina.value.trim();
 
@@ -214,12 +301,22 @@ function guardarRutina() {
     return;
   }
 
-  const misRutinas = leerLista(CLAVE_MIS_RUTINAS);
-  misRutinas.push({
-    id: "r" + Date.now(),
+  const rutina = {
+    id: idRutinaEnEdicion || "r" + Date.now(),
     nombre: nombre,
     ejercicios: ejerciciosNuevaRutina.slice()
+  };
+
+  const misRutinas = leerLista(CLAVE_MIS_RUTINAS);
+  const posicion = misRutinas.findIndex(function (guardada) {
+    return guardada.id === rutina.id;
   });
+
+  if (posicion >= 0) {
+    misRutinas[posicion] = rutina; // Ya existía: se reemplaza
+  } else {
+    misRutinas.push(rutina);       // Es nueva: se añade al final
+  }
 
   if (!guardarLista(CLAVE_MIS_RUTINAS, misRutinas)) {
     mostrarError(errorRutina, "No se ha podido guardar. Puede que tu navegador no permita guardar datos.");
@@ -227,7 +324,7 @@ function guardarRutina() {
   }
 
   empezarRutinaNueva();
-  volver(); // De vuelta a "Rutinas", donde ya aparece la nueva
+  volver(); // De vuelta a la pantalla anterior ("Rutinas" o el detalle), ya actualizada
 }
 
 document.getElementById("boton-crear-rutina").addEventListener("click", function () {
@@ -369,7 +466,7 @@ campoNombreEjercicio.addEventListener("input", function () {
 const PANTALLAS = {
   inicio: { id: "pantalla-inicio" },
   rutinas: { id: "pantalla-rutinas", padre: "inicio", alEntrar: pintarRutinas },
-  "crear-rutina": { id: "pantalla-crear-rutina", padre: "rutinas", alEntrar: pintarCrearRutina },
+  "crear-rutina": { id: "pantalla-crear-rutina", padre: "rutinas", alEntrar: abrirCrearRutina },
   "buscar-ejercicio": { id: "pantalla-buscar-ejercicio", padre: "crear-rutina", alEntrar: abrirBuscador },
   "nuevo-ejercicio": { id: "pantalla-nuevo-ejercicio", padre: "crear-rutina", alEntrar: abrirNuevoEjercicio },
   entrenar: { id: "pantalla-proximamente", titulo: "Empezar entrenamiento", padre: "inicio" },
@@ -377,9 +474,29 @@ const PANTALLAS = {
 };
 
 // Averigua qué pantalla toca según la dirección.
-// Las rutinas usan nombres como "predeterminada-cuerpo-completo-a" o "mia-r123".
+// Las rutinas usan nombres como "predeterminada-cuerpo-completo-a" o "mia-r123",
+// y la edición de una rutina propia, "editar-mia-r123".
 function pantallaActual() {
   const nombre = location.hash.slice(1);
+
+  const edicion = nombre.match(/^editar-mia-(.+)$/);
+  if (edicion) {
+    const rutina = buscarRutina("mia", edicion[1]);
+    if (rutina) {
+      return {
+        id: "pantalla-crear-rutina",
+        padre: "mia-" + rutina.id,
+        alEntrar: function () {
+          // Si se ha recargado la página, los datos aún no están cargados
+          if (idRutinaEnEdicion !== rutina.id) {
+            empezarEdicion(rutina);
+          }
+          pintarCrearRutina();
+        }
+      };
+    }
+    return PANTALLAS.rutinas;
+  }
 
   const partes = nombre.match(/^(predeterminada|mia)-(.+)$/);
   if (partes) {
@@ -389,7 +506,7 @@ function pantallaActual() {
         id: "pantalla-detalle",
         padre: "rutinas",
         alEntrar: function () {
-          pintarDetalle(rutina);
+          pintarDetalle(rutina, partes[1]);
         }
       };
     }
