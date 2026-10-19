@@ -79,6 +79,45 @@ function buscarRutina(tipo, id) {
   });
 }
 
+// Guarda una rutina propia en el navegador. Es el único sitio que lo hace.
+// Si ya existe una con el mismo id, la reemplaza; si no, la añade al final.
+// Devuelve false si el navegador no deja guardar.
+function guardarEnMisRutinas(rutina) {
+  const misRutinas = leerLista(CLAVE_MIS_RUTINAS);
+  const posicion = misRutinas.findIndex(function (guardada) {
+    return guardada.id === rutina.id;
+  });
+
+  if (posicion >= 0) {
+    misRutinas[posicion] = rutina; // Ya existía: se reemplaza
+  } else {
+    misRutinas.push(rutina);       // Es nueva: se añade al final
+  }
+
+  return guardarLista(CLAVE_MIS_RUTINAS, misRutinas);
+}
+
+// Un id nuevo para una rutina propia
+function nuevoIdRutina() {
+  return "r" + Date.now();
+}
+
+// Nombre para la copia de una rutina, sin repetir uno que ya exista en "Mis rutinas":
+// "Tren superior (copia)", "Tren superior (copia 2)", "Tren superior (copia 3)"...
+function nombreParaCopia(nombreOriginal) {
+  const nombresUsados = leerLista(CLAVE_MIS_RUTINAS).map(function (rutina) {
+    return normalizar(rutina.nombre);
+  });
+
+  let nombre = nombreOriginal + " (copia)";
+  let numero = 2;
+  while (nombresUsados.includes(normalizar(nombre))) {
+    nombre = nombreOriginal + " (copia " + numero + ")";
+    numero++;
+  }
+  return nombre;
+}
+
 // Texto con el número de ejercicios: "1 ejercicio", "5 ejercicios"...
 function textoCantidad(rutina) {
   const cantidad = rutina.ejercicios.length;
@@ -155,9 +194,33 @@ function pintarDetalle(rutina, tipo) {
     lista.appendChild(elemento);
   });
 
+  document.getElementById("boton-copiar-rutina").hidden = tipo !== "predeterminada";
   document.getElementById("acciones-rutina").hidden = tipo !== "mia";
   document.getElementById("error-detalle").hidden = true;
 }
+
+// "Copiar a mis rutinas": crea una rutina propia nueva con los mismos ejercicios.
+// La copia es independiente: tiene su propio id y su propia lista de ejercicios,
+// así que editarla o borrarla no toca la original (que vive en el código).
+document.getElementById("boton-copiar-rutina").addEventListener("click", function () {
+  const copia = {
+    id: nuevoIdRutina(),
+    nombre: nombreParaCopia(rutinaEnDetalle.nombre),
+    ejercicios: rutinaEnDetalle.ejercicios.slice()
+  };
+
+  if (!guardarEnMisRutinas(copia)) {
+    mostrarError(document.getElementById("error-detalle"), "No se ha podido copiar. Puede que tu navegador no permita guardar datos.");
+    return;
+  }
+
+  mostrarAvisoBreve("Copiada a «Mis rutinas»");
+
+  // Se sustituye esta pantalla por el detalle de la copia, en vez de añadir
+  // una más: así "Volver" lleva a "Rutinas", donde ya aparece la copia.
+  history.replaceState(history.state, "", "#mia-" + copia.id);
+  mostrarPantallaActual();
+});
 
 document.getElementById("boton-editar-rutina").addEventListener("click", function () {
   empezarEdicion(rutinaEnDetalle);
@@ -199,6 +262,18 @@ const errorRutina = document.getElementById("error-rutina");
 function mostrarError(elemento, mensaje) {
   elemento.textContent = mensaje;
   elemento.hidden = false;
+}
+
+// Muestra un aviso abajo durante unos segundos
+let temporizadorAviso = null;
+function mostrarAvisoBreve(mensaje) {
+  const aviso = document.getElementById("aviso-flotante");
+  aviso.textContent = mensaje;
+  aviso.hidden = false;
+  clearTimeout(temporizadorAviso);
+  temporizadorAviso = setTimeout(function () {
+    aviso.hidden = true;
+  }, 2500);
 }
 
 // Deja la pantalla en blanco, para crear una rutina nueva
@@ -302,23 +377,12 @@ function guardarRutina() {
   }
 
   const rutina = {
-    id: idRutinaEnEdicion || "r" + Date.now(),
+    id: idRutinaEnEdicion || nuevoIdRutina(),
     nombre: nombre,
     ejercicios: ejerciciosNuevaRutina.slice()
   };
 
-  const misRutinas = leerLista(CLAVE_MIS_RUTINAS);
-  const posicion = misRutinas.findIndex(function (guardada) {
-    return guardada.id === rutina.id;
-  });
-
-  if (posicion >= 0) {
-    misRutinas[posicion] = rutina; // Ya existía: se reemplaza
-  } else {
-    misRutinas.push(rutina);       // Es nueva: se añade al final
-  }
-
-  if (!guardarLista(CLAVE_MIS_RUTINAS, misRutinas)) {
+  if (!guardarEnMisRutinas(rutina)) {
     mostrarError(errorRutina, "No se ha podido guardar. Puede que tu navegador no permita guardar datos.");
     return;
   }

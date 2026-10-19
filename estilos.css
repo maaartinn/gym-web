@@ -239,6 +239,23 @@ button {
   font-weight: 600;
 }
 
+/* Aviso breve flotante, abajo y centrado */
+.aviso-flotante {
+  position: fixed;
+  left: 50%;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - 32px);
+  padding: 14px 20px;
+  font-weight: 600;
+  text-align: center;
+  color: #fff;
+  background: #1d2433;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
 /* ---------- Formularios ---------- */
 
 .etiqueta {

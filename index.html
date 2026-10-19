@@ -40,6 +40,9 @@
       <h2 id="detalle-nombre"></h2>
       <ol class="lista-ejercicios" id="detalle-ejercicios"></ol>
 
+      <!-- Solo se ve en las rutinas predeterminadas -->
+      <button class="boton-principal" id="boton-copiar-rutina" hidden>Copiar a mis rutinas</button>
+
       <!-- Solo se ve en las rutinas propias -->
       <div class="acciones-rutina" id="acciones-rutina" hidden>
         <button class="boton-opcion" id="boton-editar-rutina">Editar</button>
@@ -119,6 +122,9 @@
     </section>
 
   </div>
+
+  <!-- Aviso breve que aparece abajo unos segundos (por ejemplo, "Rutina copiada") -->
+  <div class="aviso-flotante" id="aviso-flotante" role="status" hidden></div>
 
   <!-- Primero los datos, después la lógica que los usa -->
   <script src="ejercicios.js"></script>
