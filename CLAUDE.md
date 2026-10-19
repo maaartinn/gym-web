@@ -20,7 +20,8 @@ App web sencilla para gente que va al gimnasio. Está pensada para principiantes
 
 ## Estado actual
 
-- `index.html` es una app de varias pantallas en un solo archivo. Cada pantalla es una `<section class="pantalla">` y solo se ve una a la vez. La pantalla actual depende del final de la dirección (`#rutinas`, `#entrenar`, `#historial`; sin nada = inicio), así que el botón "atrás" del navegador también funciona.
+- `index.html` es una app de varias pantallas en un solo archivo. Cada pantalla es una `<section class="pantalla">` y solo se ve una a la vez. La pantalla actual depende del final de la dirección (`#rutinas`, `#crear-rutina`, `#entrenar`, `#historial`, `#predeterminada-<id>`, `#mia-<id>`; sin nada = inicio), así que el botón "atrás" del navegador también funciona. Las pantallas se registran en `PANTALLAS`; cada una tiene un `padre`, que es adonde lleva "Volver" si se abrió la página directamente en ella.
 - Inicio: título y tres botones grandes ("Rutinas", "Empezar entrenamiento", "Historial / Progreso").
-- "Rutinas" es una pantalla vacía con su título. "Empezar entrenamiento" e "Historial / Progreso" muestran "Próximamente".
-- Todavía no se guarda nada. (Una versión anterior guardaba una lista en `localStorage` con la clave `"ejercicios"`; ese código se quitó.)
+- Rutinas: secciones "Rutinas predeterminadas" y "Mis rutinas", con una tarjeta por rutina (nombre y número de ejercicios). Al pulsar una tarjeta se abre el detalle (nombre y lista de ejercicios). "Crear rutina", "Empezar entrenamiento" e "Historial / Progreso" muestran "Próximamente".
+- Las rutinas predeterminadas están en la constante `RUTINAS_PREDETERMINADAS` del código (provisionales, solo nombres de ejercicios) y **nunca** se guardan en `localStorage`, para poder cambiarlas sin afectar a los datos de cada persona.
+- Las rutinas propias se leen de `localStorage` con la clave `"misRutinas"` (lista de `{ id, nombre, ejercicios }`). Todavía no se pueden crear. (Una versión anterior usaba la clave `"ejercicios"`; ese código se quitó.)
