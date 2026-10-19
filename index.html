@@ -22,132 +22,153 @@
       margin: 0 auto;
     }
 
+    /* Solo se ve la pantalla que no está oculta */
+    .pantalla[hidden] {
+      display: none;
+    }
+
     h1 {
       text-align: center;
       font-size: 1.8rem;
-      margin: 0 0 24px;
+      margin: 24px 0 32px;
     }
 
-    form {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 20px;
-    }
-
-    input {
-      flex: 1;
-      min-width: 0;
-      padding: 14px;
-      font-size: 1rem;
-      border: 1px solid #c8cdd6;
-      border-radius: 10px;
-      background: #fff;
-    }
-
-    input:focus {
-      outline: 2px solid #ff5a1f;
-      border-color: transparent;
+    h2 {
+      font-size: 1.6rem;
+      margin: 16px 0 24px;
     }
 
     button {
-      padding: 14px 18px;
-      font-size: 1rem;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    /* Botones grandes de la pantalla de inicio */
+    .menu {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .boton-grande {
+      width: 100%;
+      padding: 24px 20px;
+      font-size: 1.25rem;
       font-weight: 600;
       color: #fff;
       background: #ff5a1f;
       border: none;
-      border-radius: 10px;
-      cursor: pointer;
+      border-radius: 14px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
     }
 
-    button:active {
+    .boton-grande:active {
       background: #e04a12;
     }
 
-    ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-
-    li {
+    /* Botón para volver a la pantalla de inicio */
+    .boton-volver {
+      padding: 12px 16px;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #ff5a1f;
       background: #fff;
-      padding: 14px 16px;
-      margin-bottom: 8px;
+      border: 1px solid #c8cdd6;
       border-radius: 10px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-      word-break: break-word;
     }
 
-    .vacio {
+    .boton-volver:active {
+      background: #f2f4f7;
+    }
+
+    .aviso {
       text-align: center;
+      font-size: 1.2rem;
       color: #7a8291;
+      margin-top: 48px;
     }
   </style>
 </head>
 <body>
   <div class="contenedor">
-    <h1>Mi app de gym</h1>
 
-    <form id="formulario">
-      <input type="text" id="ejercicio" placeholder="Nombre del ejercicio" autocomplete="off">
-      <button type="submit">Añadir</button>
-    </form>
+    <!-- Pantalla de inicio -->
+    <section class="pantalla" id="pantalla-inicio">
+      <h1>Mi app de gym</h1>
+      <div class="menu">
+        <button class="boton-grande" data-ir-a="rutinas">Rutinas</button>
+        <button class="boton-grande" data-ir-a="entrenar">Empezar entrenamiento</button>
+        <button class="boton-grande" data-ir-a="historial">Historial / Progreso</button>
+      </div>
+    </section>
 
-    <p class="vacio" id="mensaje-vacio">Todavía no has añadido ejercicios.</p>
-    <ul id="lista"></ul>
+    <!-- Pantalla de rutinas (por ahora vacía) -->
+    <section class="pantalla" id="pantalla-rutinas" hidden>
+      <button class="boton-volver">← Volver</button>
+      <h2>Rutinas</h2>
+    </section>
+
+    <!-- Pantalla para lo que todavía no está hecho -->
+    <section class="pantalla" id="pantalla-proximamente" hidden>
+      <button class="boton-volver">← Volver</button>
+      <h2 id="titulo-proximamente"></h2>
+      <p class="aviso">Próximamente</p>
+    </section>
+
   </div>
 
   <script>
-    const formulario = document.getElementById("formulario");
-    const campo = document.getElementById("ejercicio");
-    const lista = document.getElementById("lista");
-    const mensajeVacio = document.getElementById("mensaje-vacio");
-    const CLAVE = "ejercicios";
+    // Cada pantalla tiene un nombre corto, que es el que aparece al final
+    // de la dirección de la página (por ejemplo: index.html#rutinas).
+    const PANTALLAS = {
+      inicio: { id: "pantalla-inicio" },
+      rutinas: { id: "pantalla-rutinas" },
+      entrenar: { id: "pantalla-proximamente", titulo: "Empezar entrenamiento" },
+      historial: { id: "pantalla-proximamente", titulo: "Historial / Progreso" }
+    };
 
-    // Lee los ejercicios guardados en el navegador (o una lista vacía si no hay)
-    function cargarEjercicios() {
-      try {
-        const guardados = localStorage.getItem(CLAVE);
-        return guardados ? JSON.parse(guardados) : [];
-      } catch (error) {
-        return [];
-      }
-    }
+    // Indica si hemos llegado a la pantalla actual desde dentro de la app
+    let vieneDeLaApp = false;
 
-    function guardarEjercicios() {
-      try {
-        localStorage.setItem(CLAVE, JSON.stringify(ejercicios));
-      } catch (error) {
-        // Si el navegador no permite guardar, la app sigue funcionando sin guardar
-      }
-    }
+    // Muestra la pantalla que indica la dirección y oculta las demás
+    function mostrarPantallaActual() {
+      const nombre = location.hash.slice(1);
+      const pantalla = PANTALLAS[nombre] || PANTALLAS.inicio;
 
-    function mostrarEjercicio(nombre) {
-      const elemento = document.createElement("li");
-      elemento.textContent = nombre;
-      lista.appendChild(elemento);
-      mensajeVacio.hidden = true;
-    }
+      document.querySelectorAll(".pantalla").forEach(function (seccion) {
+        seccion.hidden = seccion.id !== pantalla.id;
+      });
 
-    const ejercicios = cargarEjercicios();
-    ejercicios.forEach(mostrarEjercicio);
-
-    formulario.addEventListener("submit", function (evento) {
-      evento.preventDefault();
-
-      const nombre = campo.value.trim();
-      if (nombre === "") {
-        return;
+      if (pantalla.titulo) {
+        document.getElementById("titulo-proximamente").textContent = pantalla.titulo;
       }
 
-      ejercicios.push(nombre);
-      guardarEjercicios();
-      mostrarEjercicio(nombre);
+      window.scrollTo(0, 0);
+    }
 
-      campo.value = "";
-      campo.focus();
+    // Botones de la pantalla de inicio: cambian la dirección y eso cambia la pantalla
+    document.querySelectorAll("[data-ir-a]").forEach(function (boton) {
+      boton.addEventListener("click", function () {
+        vieneDeLaApp = true;
+        location.hash = boton.dataset.irA;
+      });
     });
+
+    // Botones "Volver": hacen lo mismo que la flecha de atrás del navegador.
+    // Si se abrió la página directamente en otra pantalla, van al inicio.
+    document.querySelectorAll(".boton-volver").forEach(function (boton) {
+      boton.addEventListener("click", function () {
+        if (vieneDeLaApp) {
+          vieneDeLaApp = false;
+          history.back();
+        } else {
+          location.hash = "inicio";
+        }
+      });
+    });
+
+    window.addEventListener("hashchange", mostrarPantallaActual);
+    mostrarPantallaActual();
   </script>
 </body>
 </html>

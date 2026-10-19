@@ -20,4 +20,7 @@ App web sencilla para gente que va al gimnasio. Está pensada para principiantes
 
 ## Estado actual
 
-- `index.html` incluye un título, un campo para escribir un ejercicio y un botón "Añadir" que lo añade a una lista. La lista se guarda en `localStorage` con la clave `"ejercicios"`.
+- `index.html` es una app de varias pantallas en un solo archivo. Cada pantalla es una `<section class="pantalla">` y solo se ve una a la vez. La pantalla actual depende del final de la dirección (`#rutinas`, `#entrenar`, `#historial`; sin nada = inicio), así que el botón "atrás" del navegador también funciona.
+- Inicio: título y tres botones grandes ("Rutinas", "Empezar entrenamiento", "Historial / Progreso").
+- "Rutinas" es una pantalla vacía con su título. "Empezar entrenamiento" e "Historial / Progreso" muestran "Próximamente".
+- Todavía no se guarda nada. (Una versión anterior guardaba una lista en `localStorage` con la clave `"ejercicios"`; ese código se quitó.)
