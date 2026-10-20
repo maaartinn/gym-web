@@ -103,6 +103,22 @@ function todosLosEjercicios() {
   return EJERCICIOS_BASE.concat(leerLista(CLAVE_MIS_EJERCICIOS));
 }
 
+// Los ejercicios que salen en el buscador. Si la persona creó un ejercicio
+// propio con el mismo nombre que uno de la lista inicial (por ejemplo,
+// porque se añadió a la lista después), solo sale el suyo: así no aparece
+// repetido y sigue usando el mismo de siempre, con su historial.
+function ejerciciosDelBuscador() {
+  const misEjercicios = leerLista(CLAVE_MIS_EJERCICIOS);
+  const nombresPropios = misEjercicios.map(function (ejercicio) {
+    return normalizar(ejercicio.nombre);
+  });
+  return EJERCICIOS_BASE
+    .filter(function (ejercicio) {
+      return !nombresPropios.includes(normalizar(ejercicio.nombre));
+    })
+    .concat(misEjercicios);
+}
+
 function buscarEjercicio(id) {
   return todosLosEjercicios().find(function (ejercicio) {
     return ejercicio.id === id;
@@ -475,7 +491,7 @@ function pintarResultados() {
   const resultados = document.getElementById("resultados-busqueda");
   resultados.innerHTML = "";
 
-  const encontrados = todosLosEjercicios()
+  const encontrados = ejerciciosDelBuscador()
     .filter(function (ejercicio) {
       return normalizar(ejercicio.nombre).includes(texto) || normalizar(ejercicio.grupo).includes(texto);
     })
