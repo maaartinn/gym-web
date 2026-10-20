@@ -153,13 +153,36 @@
     <!-- Pantalla con el resumen del entrenamiento guardado -->
     <section class="pantalla" id="pantalla-resumen" hidden>
       <button class="boton-volver">← Volver</button>
-      <h2>¡Entrenamiento guardado!</h2>
+      <h2 id="resumen-titulo"></h2>
       <p class="resumen-rutina" id="resumen-rutina"></p>
       <p class="resumen-datos" id="resumen-datos"></p>
 
       <div id="resumen-ejercicios"></div>
 
-      <button class="boton-principal" id="boton-resumen-listo">Volver al inicio</button>
+      <button class="boton-principal" id="boton-resumen-listo"></button>
+      <div class="acciones-rutina">
+        <button class="boton-peligro" id="boton-borrar-entreno">Borrar entrenamiento</button>
+      </div>
+      <p class="error" id="error-resumen" role="alert" hidden></p>
+    </section>
+
+    <!-- Pantalla del historial de entrenamientos -->
+    <section class="pantalla" id="pantalla-historial" hidden>
+      <button class="boton-volver">← Volver</button>
+      <h2>Historial</h2>
+
+      <!-- Acceso a "Progreso", que todavía no está hecho -->
+      <button class="tarjeta" data-ir-a="progreso">
+        <span>
+          <span class="tarjeta-nombre">Progreso</span>
+          <span class="tarjeta-cantidad">Próximamente</span>
+        </span>
+        <span class="tarjeta-flecha">›</span>
+      </button>
+
+      <h3>Entrenamientos</h3>
+      <div class="lista-tarjetas" id="lista-historial"></div>
+      <p class="vacio" id="historial-vacio">Todavía no has registrado ningún entrenamiento</p>
     </section>
 
     <!-- Pantalla para lo que todavía no está hecho -->

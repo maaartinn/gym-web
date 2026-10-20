@@ -956,22 +956,75 @@ document.getElementById("boton-cancelar-entreno").addEventListener("click", func
 
 
 // ============================================================
-// RESUMEN DE UN ENTRENAMIENTO GUARDADO
+// HISTORIAL Y DETALLE DE UN ENTRENAMIENTO GUARDADO
+// El detalle usa la misma pantalla que el resumen que sale al terminar.
 // ============================================================
-function pintarResumen(entrenamiento) {
-  const fin = new Date(entrenamiento.fecha);
-  const minutos = Math.round((fin - new Date(entrenamiento.inicio)) / 60000);
-  const totalSeries = entrenamiento.ejercicios.reduce(function (suma, ejercicio) {
+
+// Fecha en español y fácil de leer: "martes 20 de octubre".
+// Si no es de este año, se añade el año: "lunes 3 de marzo de 2025".
+function fechaLegible(fecha) {
+  const diaSemana = fecha.toLocaleDateString("es-ES", { weekday: "long" });
+  const mes = fecha.toLocaleDateString("es-ES", { month: "long" });
+  let texto = diaSemana + " " + fecha.getDate() + " de " + mes;
+  if (fecha.getFullYear() !== new Date().getFullYear()) {
+    texto += " de " + fecha.getFullYear();
+  }
+  return texto;
+}
+
+// Fecha con la primera letra en mayúscula, para los títulos: "Martes 20 de octubre"
+function fechaLegibleTitulo(fecha) {
+  const texto = fechaLegible(fecha);
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+// "1 serie", "12 series": las series hechas en todo el entrenamiento
+function textoSeries(entrenamiento) {
+  const total = entrenamiento.ejercicios.reduce(function (suma, ejercicio) {
     return suma + ejercicio.series.length;
   }, 0);
+  return total === 1 ? "1 serie" : total + " series";
+}
 
-  const fecha = fin.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" }) +
-    ", " + fin.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+// Rellena la pantalla "Historial": una tarjeta por entrenamiento, del más reciente al más antiguo
+function pintarHistorial() {
+  const entrenamientos = leerLista(CLAVE_ENTRENAMIENTOS).slice().sort(function (a, b) {
+    return b.fecha.localeCompare(a.fecha); // Las fechas guardadas se pueden comparar como texto
+  });
+
+  const lista = document.getElementById("lista-historial");
+  lista.innerHTML = "";
+  entrenamientos.forEach(function (entrenamiento) {
+    const subtitulo = entrenamiento.rutina.nombre + " · " + textoCantidad(entrenamiento) + " · " + textoSeries(entrenamiento);
+    const tarjeta = crearTarjeta(fechaLegibleTitulo(new Date(entrenamiento.fecha)), subtitulo, crearFlecha());
+    tarjeta.addEventListener("click", function () {
+      irA("historial-" + entrenamiento.id);
+    });
+    lista.appendChild(tarjeta);
+  });
+
+  document.getElementById("historial-vacio").hidden = entrenamientos.length > 0;
+}
+
+// El entrenamiento que se está viendo en la pantalla de resumen
+let entrenamientoEnResumen = null;
+
+// Rellena la pantalla de resumen. Se usa al terminar un entrenamiento
+// (recienTerminado = true) y al abrirlo desde el historial (false).
+function pintarResumen(entrenamiento, recienTerminado) {
+  entrenamientoEnResumen = entrenamiento;
+
+  const fin = new Date(entrenamiento.fecha);
+  const minutos = Math.round((fin - new Date(entrenamiento.inicio)) / 60000);
+
+  const fecha = fechaLegibleTitulo(fin) + ", " + fin.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
   const duracion = minutos < 1 ? "menos de 1 min" : minutos + " min";
-  const series = totalSeries === 1 ? "1 serie" : totalSeries + " series";
 
+  document.getElementById("resumen-titulo").textContent = recienTerminado ? "¡Entrenamiento guardado!" : "Entrenamiento";
+  document.getElementById("boton-resumen-listo").textContent = recienTerminado ? "Volver al inicio" : "Volver al historial";
+  document.getElementById("error-resumen").hidden = true;
   document.getElementById("resumen-rutina").textContent = entrenamiento.rutina.nombre;
-  document.getElementById("resumen-datos").textContent = fecha + " · " + duracion + " · " + series;
+  document.getElementById("resumen-datos").textContent = fecha + " · " + duracion + " · " + textoSeries(entrenamiento);
 
   const contenedor = document.getElementById("resumen-ejercicios");
   contenedor.innerHTML = "";
@@ -998,6 +1051,27 @@ function pintarResumen(entrenamiento) {
 }
 
 document.getElementById("boton-resumen-listo").addEventListener("click", volver);
+
+// "Borrar entrenamiento" pregunta antes de eliminarlo
+document.getElementById("boton-borrar-entreno").addEventListener("click", function () {
+  const fecha = fechaLegible(new Date(entrenamientoEnResumen.fecha));
+  const seguro = confirm("¿Seguro que quieres borrar el entrenamiento del " + fecha + "? No se puede deshacer.");
+  if (!seguro) {
+    return;
+  }
+
+  const entrenamientos = leerLista(CLAVE_ENTRENAMIENTOS).filter(function (guardado) {
+    return guardado.id !== entrenamientoEnResumen.id;
+  });
+
+  if (!guardarDatos(CLAVE_ENTRENAMIENTOS, entrenamientos)) {
+    mostrarError(document.getElementById("error-resumen"), "No se ha podido borrar. Puede que tu navegador no permita guardar datos.");
+    return;
+  }
+
+  mostrarAvisoBreve("Entrenamiento borrado");
+  volver(); // De vuelta al historial (o al inicio, si se acababa de terminar)
+});
 
 
 // ============================================================
@@ -1033,13 +1107,15 @@ const PANTALLAS = {
   "nuevo-ejercicio": { id: "pantalla-nuevo-ejercicio", padre: "crear-rutina", alEntrar: abrirNuevoEjercicio },
   entrenar: { id: "pantalla-elegir-rutina", padre: "inicio", alEntrar: pintarElegirRutina },
   entrenamiento: { id: "pantalla-entrenamiento", padre: "inicio", alEntrar: pintarEntrenamiento },
-  historial: { id: "pantalla-proximamente", titulo: "Historial / Progreso", padre: "inicio" }
+  historial: { id: "pantalla-historial", padre: "inicio", alEntrar: pintarHistorial },
+  progreso: { id: "pantalla-proximamente", titulo: "Progreso", padre: "historial" }
 };
 
 // Averigua qué pantalla toca según la dirección.
 // Las rutinas usan nombres como "predeterminada-cuerpo-completo-a" o "mia-r123",
 // y la edición de una rutina propia, "editar-mia-r123".
-// El resumen de un entrenamiento guardado usa "resumen-t123".
+// Un entrenamiento guardado usa "resumen-t123" justo al terminarlo
+// y "historial-t123" cuando se abre desde el historial.
 function pantallaActual() {
   const nombre = location.hash.slice(1);
 
@@ -1048,21 +1124,22 @@ function pantallaActual() {
     return PANTALLAS.entrenar;
   }
 
-  const resumen = nombre.match(/^resumen-(.+)$/);
-  if (resumen) {
-    const entrenamiento = leerLista(CLAVE_ENTRENAMIENTOS).find(function (guardado) {
-      return guardado.id === resumen[1];
+  const guardado = nombre.match(/^(resumen|historial)-(.+)$/);
+  if (guardado) {
+    const recienTerminado = guardado[1] === "resumen";
+    const entrenamiento = leerLista(CLAVE_ENTRENAMIENTOS).find(function (posible) {
+      return posible.id === guardado[2];
     });
     if (entrenamiento) {
       return {
         id: "pantalla-resumen",
-        padre: "inicio",
+        padre: recienTerminado ? "inicio" : "historial",
         alEntrar: function () {
-          pintarResumen(entrenamiento);
+          pintarResumen(entrenamiento, recienTerminado);
         }
       };
     }
-    return PANTALLAS.inicio;
+    return recienTerminado ? PANTALLAS.inicio : PANTALLAS.historial;
   }
 
   const edicion = nombre.match(/^editar-mia-(.+)$/);
