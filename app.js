@@ -507,6 +507,54 @@ document.getElementById("boton-guardar-rutina").addEventListener("click", guarda
 
 
 // ============================================================
+// ¿PARA QUÉ SE ELIGE UN EJERCICIO?
+// El buscador y "Crear ejercicio" sirven para tres cosas:
+//   { modo: "rutina" }                 → añadirlo a la rutina que se prepara
+//   { modo: "anadir" }                 → añadirlo al final del entrenamiento en curso
+//   { modo: "reemplazar", numero: 2 }  → ponerlo en lugar del 2.º ejercicio del entrenamiento
+// Los dos últimos van en la dirección (por ejemplo,
+// #entrenamiento-reemplazar-buscar-2), así que no se pierden al recargar.
+// ============================================================
+let destinoEjercicio = { modo: "rutina" };
+
+// El ejercicio del entrenamiento que se va a reemplazar (o undefined si no hay)
+function ejercicioAReemplazar() {
+  return entrenamientoEnCurso ? entrenamientoEnCurso.ejercicios[destinoEjercicio.numero - 1] : undefined;
+}
+
+// Si un ejercicio ya está en la rutina o en el entrenamiento, según el destino
+function yaElegido(idEjercicio) {
+  if (destinoEjercicio.modo === "rutina") {
+    return ejerciciosNuevaRutina.includes(idEjercicio);
+  }
+  return Boolean(entrenamientoEnCurso) && entrenamientoEnCurso.ejercicios.some(function (ejercicio) {
+    return ejercicio.id === idEjercicio;
+  });
+}
+
+// Usa el ejercicio elegido en el buscador (o recién creado) y vuelve atrás
+function usarEjercicio(ejercicio) {
+  if (destinoEjercicio.modo === "rutina") {
+    ejerciciosNuevaRutina.push(ejercicio.id);
+  } else if (entrenamientoEnCurso) {
+    ponerEnEntrenamiento(ejercicio);
+  }
+  volver(); // De vuelta a "Crear rutina" o al entrenamiento
+}
+
+// La dirección de "Crear ejercicio" para el destino actual
+function direccionCrear() {
+  if (destinoEjercicio.modo === "anadir") {
+    return "entrenamiento-anadir-crear";
+  }
+  if (destinoEjercicio.modo === "reemplazar") {
+    return "entrenamiento-reemplazar-crear-" + destinoEjercicio.numero;
+  }
+  return "nuevo-ejercicio";
+}
+
+
+// ============================================================
 // BUSCAR EJERCICIO
 // ============================================================
 const campoBuscar = document.getElementById("campo-buscar");
@@ -526,22 +574,21 @@ function pintarResultados() {
     });
 
   encontrados.forEach(function (ejercicio) {
-    const yaAnadido = ejerciciosNuevaRutina.includes(ejercicio.id);
+    const yaAnadido = yaElegido(ejercicio.id);
     const derecha = yaAnadido ? document.createElement("span") : crearFlecha();
     if (yaAnadido) {
       derecha.className = "tarjeta-marca";
-      derecha.textContent = "Añadido";
+      derecha.textContent = destinoEjercicio.modo === "rutina" ? "Añadido" : "Ya está";
     }
 
     const subtitulo = ejercicio.grupo + " · " + NOMBRES_MEDICION[ejercicio.medicion];
     const tarjeta = crearTarjeta(ejercicio.nombre, subtitulo, derecha);
     tarjeta.disabled = yaAnadido;
     tarjeta.addEventListener("click", function () {
-      if (ejerciciosNuevaRutina.includes(ejercicio.id)) {
+      if (yaElegido(ejercicio.id)) {
         return; // Evita añadirlo dos veces con un doble toque
       }
-      ejerciciosNuevaRutina.push(ejercicio.id);
-      volver(); // De vuelta a "Crear rutina"
+      usarEjercicio(ejercicio);
     });
     resultados.appendChild(tarjeta);
   });
@@ -550,13 +597,26 @@ function pintarResultados() {
 }
 
 // Al entrar en el buscador: campo vacío, lista completa y teclado listo
-function abrirBuscador() {
+function abrirBuscador(destino) {
+  destinoEjercicio = destino;
+  document.getElementById("titulo-buscar").textContent =
+    destino.modo === "reemplazar" ? "Reemplazar «" + ejercicioAReemplazar().nombre + "»" : "Buscar ejercicio";
   campoBuscar.value = "";
   pintarResultados();
   campoBuscar.focus();
 }
 
 campoBuscar.addEventListener("input", pintarResultados);
+
+// "¿No está? Crear ejercicio": se sustituye el buscador por "Crear ejercicio"
+// (con lo que se había escrito ya puesto como nombre). Así, al crearlo,
+// "Volver" lleva directamente a la rutina o al entrenamiento.
+let nombrePropuesto = "";
+document.getElementById("boton-buscar-crear").addEventListener("click", function () {
+  nombrePropuesto = campoBuscar.value.trim();
+  history.replaceState(history.state, "", "#" + direccionCrear());
+  mostrarPantallaActual();
+});
 
 
 // ============================================================
@@ -566,10 +626,23 @@ const formularioEjercicio = document.getElementById("formulario-ejercicio");
 const campoNombreEjercicio = document.getElementById("nombre-ejercicio");
 const errorEjercicio = document.getElementById("error-ejercicio");
 
-// Al entrar en "Crear ejercicio": formulario en blanco
-function abrirNuevoEjercicio() {
+// Al entrar en "Crear ejercicio": formulario en blanco (o con el nombre
+// que se había escrito en el buscador) y el botón según el destino
+function abrirNuevoEjercicio(destino) {
+  destinoEjercicio = destino;
   formularioEjercicio.reset();
+  campoNombreEjercicio.value = nombrePropuesto;
+  nombrePropuesto = "";
   errorEjercicio.hidden = true;
+
+  let textoBoton = "Crear y añadir a la rutina";
+  if (destino.modo === "anadir") {
+    textoBoton = "Crear y añadir al entrenamiento";
+  } else if (destino.modo === "reemplazar") {
+    textoBoton = "Crear y poner en lugar de «" + ejercicioAReemplazar().nombre + "»";
+  }
+  document.getElementById("boton-crear-ejercicio").textContent = textoBoton;
+
   campoNombreEjercicio.focus();
 }
 
@@ -606,8 +679,7 @@ formularioEjercicio.addEventListener("submit", function (evento) {
     return;
   }
 
-  ejerciciosNuevaRutina.push(nuevo.id);
-  volver(); // De vuelta a "Crear rutina"
+  usarEjercicio(nuevo);
 });
 
 campoNombreEjercicio.addEventListener("input", function () {
@@ -715,6 +787,16 @@ function ultimaVez(idEjercicio, entrenamientos) {
   return null;
 }
 
+// Un ejercicio listo para apuntar en el entrenamiento: copia del nombre y
+// la medición, 3 series vacías y sin nota
+function ejercicioParaEntrenar(ejercicio) {
+  const series = [];
+  for (let i = 0; i < SERIES_POR_DEFECTO; i++) {
+    series.push(serieVacia(ejercicio.medicion));
+  }
+  return { id: ejercicio.id, nombre: ejercicio.nombre, medicion: ejercicio.medicion, series: series, nota: "" };
+}
+
 // Rellena la pantalla "¿Qué rutina vas a hacer?"
 function pintarElegirRutina() {
   pintarListaRutinas("entrenar-predeterminadas", RUTINAS_PREDETERMINADAS, empezarEntrenamiento);
@@ -741,11 +823,7 @@ function empezarEntrenamiento(rutina) {
     if (!ejercicio) {
       return; // Un ejercicio que ya no existe no se puede apuntar
     }
-    const series = [];
-    for (let i = 0; i < SERIES_POR_DEFECTO; i++) {
-      series.push(serieVacia(ejercicio.medicion));
-    }
-    ejercicios.push({ id: ejercicio.id, nombre: ejercicio.nombre, medicion: ejercicio.medicion, series: series, nota: "" });
+    ejercicios.push(ejercicioParaEntrenar(ejercicio));
   });
 
   if (ejercicios.length === 0) {
@@ -774,18 +852,152 @@ function pintarEntrenamiento() {
   const anteriores = leerLista(CLAVE_ENTRENAMIENTOS);
   const contenedor = document.getElementById("entreno-ejercicios");
   contenedor.innerHTML = "";
+  menuAbierto = null;
+  let bloqueDestacado = null;
   entrenamientoEnCurso.ejercicios.forEach(function (ejercicio) {
-    contenedor.appendChild(crearBloqueEjercicio(ejercicio, anteriores));
+    const bloque = crearBloqueEjercicio(ejercicio, anteriores);
+    if (ejercicio === ejercicioDestacado) {
+      bloqueDestacado = bloque;
+    }
+    contenedor.appendChild(bloque);
   });
 
   document.getElementById("error-entreno").hidden = true;
+  document.getElementById("aviso-sin-ejercicios").hidden = true;
+  document.getElementById("opciones-anadir-entreno").hidden = true;
+
+  // Al volver de añadir o reemplazar un ejercicio, se lleva la vista hasta él
+  ejercicioDestacado = null;
+  if (bloqueDestacado) {
+    bloqueDestacado.scrollIntoView({ block: "center" });
+  }
 }
 
 // Lo que pasa cada vez que se escribe algo o se marca una casilla
 function alCambiarEntrenamiento() {
   guardarEntrenamientoEnCurso();
   document.getElementById("error-entreno").hidden = true;
+  document.getElementById("aviso-sin-ejercicios").hidden = true;
 }
+
+// ---------- Cambiar los ejercicios de este entrenamiento ----------
+// Añadir, quitar y reemplazar cambian solo el entrenamiento en curso
+// (que se guarda solo, como todo lo demás). La rutina no se toca.
+
+// El ejercicio recién añadido o puesto en lugar de otro, para llevar la vista hasta él
+let ejercicioDestacado = null;
+
+// Si una serie tiene algo: marcada como hecha o con algún dato escrito
+function serieTieneDatos(serie, campos) {
+  return serie.hecha || campos.some(function (campo) {
+    return (serie[campo.nombre] || "").trim() !== "";
+  });
+}
+
+// Si un ejercicio tiene algo apuntado: alguna serie con datos, o una nota
+function tieneAlgoApuntado(ejercicio) {
+  const campos = camposDe(ejercicio.medicion);
+  return (ejercicio.nota || "").trim() !== "" || ejercicio.series.some(function (serie) {
+    return serieTieneDatos(serie, campos);
+  });
+}
+
+// Pone un ejercicio en el entrenamiento, con series vacías: al final, o en
+// el sitio del que se reemplaza (según destinoEjercicio)
+function ponerEnEntrenamiento(ejercicio) {
+  const nuevo = ejercicioParaEntrenar(ejercicio);
+
+  if (destinoEjercicio.modo === "reemplazar") {
+    const reemplazado = ejercicioAReemplazar();
+    if (!reemplazado) {
+      return;
+    }
+    entrenamientoEnCurso.ejercicios[destinoEjercicio.numero - 1] = nuevo;
+    mostrarAvisoBreve("«" + reemplazado.nombre + "» reemplazado por «" + nuevo.nombre + "»");
+  } else {
+    entrenamientoEnCurso.ejercicios.push(nuevo);
+    mostrarAvisoBreve("Añadido: " + nuevo.nombre);
+  }
+
+  ejercicioDestacado = nuevo;
+  guardarEntrenamientoEnCurso();
+}
+
+// "Quitar": lo saca de este entrenamiento. Si tiene algo apuntado, pregunta antes.
+// El último no se puede quitar: un entrenamiento necesita al menos un ejercicio.
+function quitarEjercicio(ejercicio) {
+  const ejercicios = entrenamientoEnCurso.ejercicios;
+  if (ejercicios.length <= 1) {
+    const aviso = document.getElementById("aviso-sin-ejercicios");
+    aviso.hidden = false;
+    aviso.scrollIntoView({ block: "nearest" });
+    return;
+  }
+
+  if (tieneAlgoApuntado(ejercicio) &&
+      !confirm("«" + ejercicio.nombre + "» tiene series o una nota apuntadas. Si lo quitas, se perderán. ¿Quitarlo del entrenamiento?")) {
+    return;
+  }
+
+  const posicion = ejercicios.indexOf(ejercicio);
+  if (posicion < 0) {
+    return;
+  }
+  ejercicios.splice(posicion, 1);
+  alCambiarEntrenamiento();
+  pintarEntrenamiento();
+  mostrarAvisoBreve("Quitado: " + ejercicio.nombre);
+}
+
+// "Reemplazar": si tiene algo apuntado, avisa de que se perderá; después
+// abre el buscador para elegir el ejercicio que irá en su lugar
+function reemplazarEjercicio(ejercicio) {
+  const posicion = entrenamientoEnCurso.ejercicios.indexOf(ejercicio);
+  if (posicion < 0) {
+    return;
+  }
+
+  if (tieneAlgoApuntado(ejercicio) &&
+      !confirm("«" + ejercicio.nombre + "» tiene series o una nota apuntadas. Si lo reemplazas, se perderán. ¿Elegir otro ejercicio en su lugar?")) {
+    return;
+  }
+
+  irA("entrenamiento-reemplazar-buscar-" + (posicion + 1));
+}
+
+// El menú de tres puntos de un ejercicio. Solo hay uno abierto a la vez,
+// y se cierra al pulsar en cualquier otro sitio.
+let menuAbierto = null; // { menu, boton }
+
+function cerrarMenuEjercicio() {
+  if (menuAbierto) {
+    menuAbierto.menu.hidden = true;
+    menuAbierto.boton.setAttribute("aria-expanded", "false");
+    menuAbierto = null;
+  }
+}
+
+document.addEventListener("click", function (evento) {
+  if (menuAbierto && !menuAbierto.menu.contains(evento.target) && !menuAbierto.boton.contains(evento.target)) {
+    cerrarMenuEjercicio();
+  }
+});
+
+// "+ Añadir ejercicio" muestra u oculta las dos opciones
+document.getElementById("boton-anadir-al-entreno").addEventListener("click", function () {
+  const opciones = document.getElementById("opciones-anadir-entreno");
+  opciones.hidden = !opciones.hidden;
+});
+
+// El aviso de "no puedes quedarte sin ejercicios" ofrece añadir uno o cancelar
+document.getElementById("boton-sin-ejercicios-anadir").addEventListener("click", function () {
+  document.getElementById("aviso-sin-ejercicios").hidden = true;
+  const opciones = document.getElementById("opciones-anadir-entreno");
+  opciones.hidden = false;
+  opciones.scrollIntoView({ block: "nearest" });
+});
+
+document.getElementById("boton-sin-ejercicios-cancelar").addEventListener("click", cancelarEntrenamiento);
 
 const LARGO_MAXIMO_NOTA = 300;
 
@@ -815,9 +1027,35 @@ function crearBloqueEjercicio(ejercicio, anteriores) {
       notasAbiertas.delete(ejercicio);
     }
   });
+  // Botón de tres puntos: abre el menú con "Reemplazar" y "Quitar"
+  const botonMenu = crearBotonPequeno("boton-menu-ejercicio", "⋯", "Más opciones de " + ejercicio.nombre, function () {
+    const abrir = menu.hidden;
+    cerrarMenuEjercicio();
+    if (abrir) {
+      menu.hidden = false;
+      botonMenu.setAttribute("aria-expanded", "true");
+      menuAbierto = { menu: menu, boton: botonMenu };
+    }
+  });
+  botonMenu.setAttribute("aria-expanded", "false");
+
   cabecera.appendChild(titulo);
   cabecera.appendChild(botonNota);
+  cabecera.appendChild(botonMenu);
   bloque.appendChild(cabecera);
+
+  const menu = document.createElement("div");
+  menu.className = "menu-ejercicio";
+  menu.hidden = true;
+  menu.appendChild(crearBotonPequeno("boton-opcion", "Reemplazar", "Reemplazar " + ejercicio.nombre, function () {
+    cerrarMenuEjercicio();
+    reemplazarEjercicio(ejercicio);
+  }));
+  menu.appendChild(crearBotonPequeno("boton-peligro", "Quitar", "Quitar " + ejercicio.nombre + " del entrenamiento", function () {
+    cerrarMenuEjercicio();
+    quitarEjercicio(ejercicio);
+  }));
+  bloque.appendChild(menu);
 
   const anterior = ultimaVez(ejercicio.id, anteriores);
   if (anterior) {
@@ -883,10 +1121,7 @@ function crearBloqueEjercicio(ejercicio, anteriores) {
 
   const quitar = crearBotonPequeno("boton-serie", "− Quitar serie", "Quitar la última serie", function () {
     const ultima = ejercicio.series[ejercicio.series.length - 1];
-    const tieneDatos = ultima.hecha || campos.some(function (campo) {
-      return ultima[campo.nombre].trim() !== "";
-    });
-    if (tieneDatos && !confirm("La serie " + ejercicio.series.length + " tiene datos apuntados. ¿Quitarla?")) {
+    if (serieTieneDatos(ultima, campos) && !confirm("La serie " + ejercicio.series.length + " tiene datos apuntados. ¿Quitarla?")) {
       return;
     }
     ejercicio.series.pop();
@@ -1056,14 +1291,16 @@ function terminarEntrenamiento() {
 document.getElementById("boton-terminar-entreno").addEventListener("click", terminarEntrenamiento);
 
 // "Cancelar entrenamiento" pregunta antes de tirar lo apuntado
-document.getElementById("boton-cancelar-entreno").addEventListener("click", function () {
+function cancelarEntrenamiento() {
   const seguro = confirm("¿Seguro que quieres cancelar el entrenamiento? Se perderá todo lo que has apuntado.");
   if (!seguro) {
     return;
   }
   descartarEntrenamientoEnCurso();
   volver();
-});
+}
+
+document.getElementById("boton-cancelar-entreno").addEventListener("click", cancelarEntrenamiento);
 
 
 // ============================================================
@@ -1618,8 +1855,16 @@ const PANTALLAS = {
   inicio: { id: "pantalla-inicio", alEntrar: pintarInicio },
   rutinas: { id: "pantalla-rutinas", padre: "inicio", alEntrar: pintarRutinas },
   "crear-rutina": { id: "pantalla-crear-rutina", padre: "rutinas", alEntrar: abrirCrearRutina },
-  "buscar-ejercicio": { id: "pantalla-buscar-ejercicio", padre: "crear-rutina", alEntrar: abrirBuscador },
-  "nuevo-ejercicio": { id: "pantalla-nuevo-ejercicio", padre: "crear-rutina", alEntrar: abrirNuevoEjercicio },
+  "buscar-ejercicio": {
+    id: "pantalla-buscar-ejercicio",
+    padre: "crear-rutina",
+    alEntrar: function () { abrirBuscador({ modo: "rutina" }); }
+  },
+  "nuevo-ejercicio": {
+    id: "pantalla-nuevo-ejercicio",
+    padre: "crear-rutina",
+    alEntrar: function () { abrirNuevoEjercicio({ modo: "rutina" }); }
+  },
   entrenar: { id: "pantalla-elegir-rutina", padre: "inicio", alEntrar: pintarElegirRutina },
   entrenamiento: { id: "pantalla-entrenamiento", padre: "inicio", alEntrar: pintarEntrenamiento },
   historial: { id: "pantalla-historial", padre: "inicio", alEntrar: pintarHistorial },
@@ -1655,6 +1900,31 @@ function pantallaActual() {
   // Sin entrenamiento en curso, toca elegir una rutina para empezar uno
   if (nombre === "entrenamiento" && !entrenamientoEnCurso) {
     return PANTALLAS.entrenar;
+  }
+
+  // Buscar o crear un ejercicio para el entrenamiento en curso:
+  // "entrenamiento-anadir-buscar", "entrenamiento-anadir-crear" (añadirlo al final),
+  // "entrenamiento-reemplazar-buscar-2", "entrenamiento-reemplazar-crear-2" (ponerlo en lugar del 2.º)
+  const cambio = nombre.match(/^entrenamiento-(anadir|reemplazar)-(buscar|crear)(?:-(\d+))?$/);
+  if (cambio) {
+    const destino = cambio[1] === "anadir" ? { modo: "anadir" } : { modo: "reemplazar", numero: Number(cambio[3]) };
+    const valido = Boolean(entrenamientoEnCurso) &&
+      (destino.modo === "anadir" ? !cambio[3] : Boolean(entrenamientoEnCurso.ejercicios[destino.numero - 1]));
+    if (!valido) {
+      return entrenamientoEnCurso ? PANTALLAS.entrenamiento : PANTALLAS.entrenar;
+    }
+    const buscar = cambio[2] === "buscar";
+    return {
+      id: buscar ? "pantalla-buscar-ejercicio" : "pantalla-nuevo-ejercicio",
+      padre: "entrenamiento",
+      alEntrar: function () {
+        if (buscar) {
+          abrirBuscador(destino);
+        } else {
+          abrirNuevoEjercicio(destino);
+        }
+      }
+    };
   }
 
   const guardado = nombre.match(/^(resumen|historial)-(.+)$/);

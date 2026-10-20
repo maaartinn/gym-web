@@ -112,15 +112,17 @@
       <button class="boton-principal" id="boton-guardar-rutina">Guardar</button>
     </section>
 
-    <!-- Pantalla para buscar un ejercicio y añadirlo a la rutina -->
+    <!-- Pantalla para buscar un ejercicio y añadirlo a la rutina
+         (o al entrenamiento en curso, o para reemplazar uno) -->
     <section class="pantalla" id="pantalla-buscar-ejercicio" hidden>
       <button class="boton-volver">← Volver</button>
-      <h2>Buscar ejercicio</h2>
+      <h2 id="titulo-buscar">Buscar ejercicio</h2>
 
       <input class="campo" type="search" id="campo-buscar" placeholder="Escribe para buscar…" autocomplete="off" aria-label="Buscar ejercicio">
+      <button class="boton-opcion boton-buscar-crear" id="boton-buscar-crear">¿No está? Crear ejercicio</button>
 
       <div class="lista-tarjetas resultados" id="resultados-busqueda"></div>
-      <p class="vacio resultados" id="busqueda-vacia" hidden>No hay ejercicios con ese nombre. Puedes volver y usar «Crear ejercicio».</p>
+      <p class="vacio resultados" id="busqueda-vacia" hidden>No hay ejercicios con ese nombre. Puedes crearlo con «Crear ejercicio».</p>
     </section>
 
     <!-- Pantalla para crear un ejercicio nuevo -->
@@ -149,7 +151,7 @@
         </fieldset>
 
         <p class="error" id="error-ejercicio" role="alert" hidden></p>
-        <button class="boton-principal" type="submit">Crear y añadir a la rutina</button>
+        <button class="boton-principal" type="submit" id="boton-crear-ejercicio">Crear y añadir a la rutina</button>
       </form>
     </section>
 
@@ -174,6 +176,22 @@
       <p class="error" id="error-autoguardado" role="alert" hidden>Tu navegador no deja guardar datos: si cierras o recargas la página, perderás lo apuntado.</p>
 
       <div id="entreno-ejercicios"></div>
+
+      <!-- Solo se ve si se intenta quitar el único ejercicio que queda -->
+      <div class="aviso-continuar aviso-sin-ejercicios" id="aviso-sin-ejercicios" role="alert" hidden>
+        <p>Un entrenamiento necesita al menos un ejercicio. Añade otro antes de quitar este o, si no quieres seguir, cancela el entrenamiento.</p>
+        <div class="opciones-anadir">
+          <button class="boton-opcion" id="boton-sin-ejercicios-anadir">Añadir ejercicio</button>
+          <button class="boton-peligro" id="boton-sin-ejercicios-cancelar">Cancelar entrenamiento</button>
+        </div>
+      </div>
+
+      <!-- Añadir un ejercicio solo a este entrenamiento (la rutina no cambia) -->
+      <button class="boton-secundario" id="boton-anadir-al-entreno">+ Añadir ejercicio</button>
+      <div class="opciones-anadir" id="opciones-anadir-entreno" hidden>
+        <button class="boton-opcion" data-ir-a="entrenamiento-anadir-buscar">Buscar en la lista</button>
+        <button class="boton-opcion" data-ir-a="entrenamiento-anadir-crear">Crear ejercicio</button>
+      </div>
 
       <p class="error" id="error-entreno" role="alert" hidden></p>
       <button class="boton-principal" id="boton-terminar-entreno">Terminar entrenamiento</button>
