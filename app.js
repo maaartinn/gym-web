@@ -1075,6 +1075,165 @@ document.getElementById("boton-borrar-entreno").addEventListener("click", functi
 
 
 // ============================================================
+// PROGRESO: CALENDARIO MENSUAL
+// La dirección dice qué mes se ve y, si se ha elegido uno, qué día:
+//   #progreso             → el mes actual
+//   #progreso-2026-09     → septiembre de 2026
+//   #progreso-2026-09-14  → ese mes, con la lista de entrenamientos del día 14
+// Así "atrás" vuelve al mismo mes, y las flechas no llenan el historial
+// del navegador (sustituyen la dirección en vez de añadir una).
+// Todas las fechas se miran con la hora local del dispositivo.
+// ============================================================
+
+// El mes que se está viendo (mes: de 0 = enero a 11 = diciembre)
+let mesEnProgreso = { anio: 0, mes: 0 };
+
+function dosCifras(numero) {
+  return numero < 10 ? "0" + numero : String(numero);
+}
+
+// "2026-10-20": el día de una fecha según la hora local del dispositivo.
+// (Si se usara la hora universal, un entrenamiento a las 00:30 podría
+// salir en el día anterior.)
+function claveDia(fecha) {
+  return fecha.getFullYear() + "-" + dosCifras(fecha.getMonth() + 1) + "-" + dosCifras(fecha.getDate());
+}
+
+// Los entrenamientos guardados agrupados por día: { "2026-10-20": [ ... ], ... }
+function entrenamientosPorDia() {
+  const porDia = {};
+  leerLista(CLAVE_ENTRENAMIENTOS)
+    .slice()
+    .sort(function (a, b) {
+      return a.fecha.localeCompare(b.fecha);
+    })
+    .forEach(function (entrenamiento) {
+      const clave = claveDia(new Date(entrenamiento.fecha));
+      if (!porDia[clave]) {
+        porDia[clave] = [];
+      }
+      porDia[clave].push(entrenamiento);
+    });
+  return porDia;
+}
+
+// Dibuja el calendario de un mes. diaElegido es una clave como "2026-10-20"
+// (o null): si ese día tiene entrenamientos, se muestra su lista debajo.
+function pintarProgreso(anio, mes, diaElegido) {
+  mesEnProgreso = { anio: anio, mes: mes };
+
+  const hoy = new Date();
+  const claveHoy = claveDia(hoy);
+  const porDia = entrenamientosPorDia();
+  const nombreMes = new Date(anio, mes, 1).toLocaleDateString("es-ES", { month: "long" });
+
+  document.getElementById("calendario-mes").textContent =
+    nombreMes.charAt(0).toUpperCase() + nombreMes.slice(1) + " " + anio;
+
+  const dias = document.getElementById("calendario-dias");
+  dias.innerHTML = "";
+
+  // Huecos antes del día 1, para que caiga en su día de la semana.
+  // getDay() da 0 = domingo; se pasa a 0 = lunes, porque la semana empieza en lunes.
+  const huecos = (new Date(anio, mes, 1).getDay() + 6) % 7;
+  for (let i = 0; i < huecos; i++) {
+    dias.appendChild(document.createElement("span"));
+  }
+
+  const diasDelMes = new Date(anio, mes + 1, 0).getDate(); // El "día 0" del mes siguiente es el último de este
+  let totalMes = 0;
+
+  for (let dia = 1; dia <= diasDelMes; dia++) {
+    const clave = anio + "-" + dosCifras(mes + 1) + "-" + dosCifras(dia);
+    const delDia = porDia[clave] || [];
+    totalMes += delDia.length;
+
+    // Los días con entrenamiento son botones; los demás, solo un número
+    const celda = document.createElement(delDia.length > 0 ? "button" : "span");
+    celda.className = "dia";
+    celda.textContent = dia;
+    celda.classList.toggle("dia-hoy", clave === claveHoy);
+
+    if (delDia.length > 0) {
+      celda.classList.add("dia-con-entreno");
+      celda.classList.toggle("dia-elegido", clave === diaElegido);
+      celda.setAttribute("aria-label", dia + " de " + nombreMes + ": " +
+        (delDia.length === 1 ? "1 entrenamiento" : delDia.length + " entrenamientos"));
+      celda.addEventListener("click", function () {
+        if (delDia.length === 1) {
+          irA("historial-" + delDia[0].id);
+        } else {
+          history.replaceState(history.state, "", "#progreso-" + clave);
+          mostrarPantallaActual();
+        }
+      });
+    }
+
+    dias.appendChild(celda);
+  }
+
+  // "Este mes: 8 entrenamientos" o "En septiembre: 3 entrenamientos"
+  let cuando = "Este mes";
+  if (anio !== hoy.getFullYear() || mes !== hoy.getMonth()) {
+    cuando = "En " + nombreMes + (anio !== hoy.getFullYear() ? " de " + anio : "");
+  }
+  document.getElementById("calendario-total").textContent =
+    cuando + ": " + (totalMes === 1 ? "1 entrenamiento" : totalMes + " entrenamientos");
+
+  pintarDiaElegido(diaElegido, porDia[diaElegido] || []);
+}
+
+// Lista para elegir cuando un día tiene más de un entrenamiento
+function pintarDiaElegido(clave, delDia) {
+  const panel = document.getElementById("dia-elegido");
+  panel.hidden = delDia.length === 0;
+  if (delDia.length === 0) {
+    return;
+  }
+
+  const partes = clave.split("-").map(Number);
+  document.getElementById("dia-elegido-titulo").textContent =
+    fechaLegibleTitulo(new Date(partes[0], partes[1] - 1, partes[2]));
+
+  const lista = document.getElementById("dia-elegido-lista");
+  lista.innerHTML = "";
+  delDia.forEach(function (entrenamiento) {
+    const hora = new Date(entrenamiento.fecha).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+    const subtitulo = hora + " · " + textoCantidad(entrenamiento) + " · " + textoSeries(entrenamiento);
+    const tarjeta = crearTarjeta(entrenamiento.rutina.nombre, subtitulo, crearFlecha());
+    tarjeta.addEventListener("click", function () {
+      irA("historial-" + entrenamiento.id);
+    });
+    lista.appendChild(tarjeta);
+  });
+
+  panel.scrollIntoView({ block: "nearest" });
+}
+
+// Al entrar en "Progreso": el mes actual
+function abrirProgreso() {
+  const hoy = new Date();
+  pintarProgreso(hoy.getFullYear(), hoy.getMonth(), null);
+}
+
+// Cambia de mes con las flechas (-1 = anterior, +1 = siguiente)
+function cambiarMes(cuanto) {
+  // new Date se encarga de pasar de diciembre a enero (y al revés)
+  const fecha = new Date(mesEnProgreso.anio, mesEnProgreso.mes + cuanto, 1);
+  history.replaceState(history.state, "", "#progreso-" + fecha.getFullYear() + "-" + dosCifras(fecha.getMonth() + 1));
+  mostrarPantallaActual();
+}
+
+document.getElementById("mes-anterior").addEventListener("click", function () {
+  cambiarMes(-1);
+});
+
+document.getElementById("mes-siguiente").addEventListener("click", function () {
+  cambiarMes(1);
+});
+
+
+// ============================================================
 // INICIO
 // Si hay un entrenamiento sin terminar, se ofrece continuarlo.
 // ============================================================
@@ -1108,7 +1267,7 @@ const PANTALLAS = {
   entrenar: { id: "pantalla-elegir-rutina", padre: "inicio", alEntrar: pintarElegirRutina },
   entrenamiento: { id: "pantalla-entrenamiento", padre: "inicio", alEntrar: pintarEntrenamiento },
   historial: { id: "pantalla-historial", padre: "inicio", alEntrar: pintarHistorial },
-  progreso: { id: "pantalla-proximamente", titulo: "Progreso", padre: "historial" }
+  progreso: { id: "pantalla-progreso", padre: "inicio", alEntrar: abrirProgreso }
 };
 
 // Averigua qué pantalla toca según la dirección.
@@ -1116,8 +1275,25 @@ const PANTALLAS = {
 // y la edición de una rutina propia, "editar-mia-r123".
 // Un entrenamiento guardado usa "resumen-t123" justo al terminarlo
 // y "historial-t123" cuando se abre desde el historial.
+// El calendario de otro mes usa "progreso-2026-09" (y "progreso-2026-09-14" con un día elegido).
 function pantallaActual() {
   const nombre = location.hash.slice(1);
+
+  const progreso = nombre.match(/^progreso-(\d{4})-(\d{2})(-\d{2})?$/);
+  if (progreso) {
+    const anio = Number(progreso[1]);
+    const mes = Number(progreso[2]) - 1;
+    if (mes >= 0 && mes <= 11) {
+      return {
+        id: "pantalla-progreso",
+        padre: "inicio",
+        alEntrar: function () {
+          pintarProgreso(anio, mes, progreso[3] ? nombre.slice("progreso-".length) : null);
+        }
+      };
+    }
+    return PANTALLAS.progreso;
+  }
 
   // Sin entrenamiento en curso, toca elegir una rutina para empezar uno
   if (nombre === "entrenamiento" && !entrenamientoEnCurso) {
@@ -1182,10 +1358,6 @@ function pantallaActual() {
 // Muestra la pantalla que indica la dirección y oculta las demás
 function mostrarPantallaActual() {
   const pantalla = pantallaActual();
-
-  if (pantalla.titulo) {
-    document.getElementById("titulo-proximamente").textContent = pantalla.titulo;
-  }
 
   document.querySelectorAll(".pantalla").forEach(function (seccion) {
     seccion.hidden = seccion.id !== pantalla.id;

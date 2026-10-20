@@ -22,7 +22,8 @@
       <div class="menu">
         <button class="boton-grande" data-ir-a="rutinas">Rutinas</button>
         <button class="boton-grande" data-ir-a="entrenar">Empezar entrenamiento</button>
-        <button class="boton-grande" data-ir-a="historial">Historial / Progreso</button>
+        <button class="boton-grande" data-ir-a="historial">Historial</button>
+        <button class="boton-grande" data-ir-a="progreso">Progreso</button>
       </div>
     </section>
 
@@ -171,25 +172,38 @@
       <button class="boton-volver">← Volver</button>
       <h2>Historial</h2>
 
-      <!-- Acceso a "Progreso", que todavía no está hecho -->
-      <button class="tarjeta" data-ir-a="progreso">
-        <span>
-          <span class="tarjeta-nombre">Progreso</span>
-          <span class="tarjeta-cantidad">Próximamente</span>
-        </span>
-        <span class="tarjeta-flecha">›</span>
-      </button>
-
-      <h3>Entrenamientos</h3>
       <div class="lista-tarjetas" id="lista-historial"></div>
       <p class="vacio" id="historial-vacio">Todavía no has registrado ningún entrenamiento</p>
     </section>
 
-    <!-- Pantalla para lo que todavía no está hecho -->
-    <section class="pantalla" id="pantalla-proximamente" hidden>
+    <!-- Pantalla de progreso: calendario del mes -->
+    <section class="pantalla" id="pantalla-progreso" hidden>
       <button class="boton-volver">← Volver</button>
-      <h2 id="titulo-proximamente"></h2>
-      <p class="aviso">Próximamente</p>
+
+      <!-- Todo el calendario va en un recuadro, con el nombre de la app
+           arriba, para que se vea completo en una captura de pantalla -->
+      <div class="calendario">
+        <p class="calendario-app">Mi app de gym</p>
+
+        <div class="calendario-cabecera">
+          <button class="boton-mes" id="mes-anterior" aria-label="Mes anterior">‹</button>
+          <h2 class="calendario-mes" id="calendario-mes"></h2>
+          <button class="boton-mes" id="mes-siguiente" aria-label="Mes siguiente">›</button>
+        </div>
+
+        <div class="calendario-semana" aria-hidden="true">
+          <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
+        </div>
+        <div class="calendario-dias" id="calendario-dias"></div>
+
+        <p class="calendario-total" id="calendario-total"></p>
+      </div>
+
+      <!-- Solo se ve al pulsar un día con más de un entrenamiento -->
+      <div id="dia-elegido" hidden>
+        <h3 id="dia-elegido-titulo"></h3>
+        <div class="lista-tarjetas" id="dia-elegido-lista"></div>
+      </div>
     </section>
 
   </div>

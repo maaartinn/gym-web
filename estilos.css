@@ -213,13 +213,6 @@ button {
 
 /* ---------- Textos ---------- */
 
-.aviso {
-  text-align: center;
-  font-size: 1.2rem;
-  color: #7a8291;
-  margin-top: 48px;
-}
-
 .vacio {
   margin: 0;
   padding: 18px 16px;
@@ -607,4 +600,124 @@ button {
 
 .series-resumen li {
   padding: 3px 0;
+}
+
+/* ---------- Progreso (calendario) ---------- */
+
+/* Recuadro blanco con todo el calendario */
+.calendario {
+  margin-top: 16px;
+  padding: 16px 10px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* "Mi app de gym", arriba del calendario */
+.calendario-app {
+  margin: 0 0 10px;
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #ff5a1f;
+}
+
+/* Fila con las flechas y el nombre del mes */
+.calendario-cabecera {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.calendario-mes {
+  flex: 1;
+  margin: 0;
+  font-size: 1.3rem;
+  text-align: center;
+}
+
+.boton-mes {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  font-size: 1.6rem;
+  font-weight: 600;
+  line-height: 1;
+  color: #1d2433;
+  background: #f2f4f7;
+  border: none;
+  border-radius: 10px;
+}
+
+.boton-mes:active {
+  background: #e2e6ec;
+}
+
+/* Rejilla de 7 columnas: nombres de los días y números */
+.calendario-semana,
+.calendario-dias {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.calendario-semana span {
+  padding: 4px 0;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #7a8291;
+}
+
+/* Cada día: un círculo con el número */
+.dia {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  min-width: 0;
+  padding: 0;
+  font-family: inherit;
+  font-size: 1rem;
+  color: inherit;
+  background: none;
+  border: none;
+  border-radius: 50%;
+}
+
+/* Día con al menos un entrenamiento: círculo naranja */
+.dia-con-entreno {
+  font-weight: 700;
+  color: #fff;
+  background: #ff5a1f;
+}
+
+.dia-con-entreno:active {
+  background: #e04a12;
+}
+
+/* Hoy: aro oscuro alrededor */
+.dia-hoy {
+  font-weight: 700;
+  box-shadow: inset 0 0 0 2px #1d2433;
+}
+
+/* Hoy y con entrenamiento: aro oscuro por fuera del círculo naranja */
+.dia-con-entreno.dia-hoy {
+  box-shadow: inset 0 0 0 2px #fff, 0 0 0 2px #1d2433;
+}
+
+/* Día pulsado que tiene varios entrenamientos */
+.dia-elegido {
+  box-shadow: 0 0 0 3px #ffb899;
+}
+
+/* "Este mes: 8 entrenamientos" */
+.calendario-total {
+  margin: 14px 0 0;
+  text-align: center;
+  font-size: 1.05rem;
+  font-weight: 600;
 }
