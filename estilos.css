@@ -721,3 +721,42 @@ button {
   font-size: 1.05rem;
   font-weight: 600;
 }
+
+/* ---------- Copia de seguridad ---------- */
+
+/* Botón "Copia de seguridad" de la pantalla de inicio, debajo de los grandes */
+.boton-copia {
+  width: 100%;
+  margin-top: 24px;
+}
+
+.boton-importar {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.texto-copia {
+  margin: 0 0 12px;
+  line-height: 1.45;
+}
+
+#datos-actuales {
+  font-weight: 600;
+}
+
+.nota-copia {
+  margin: 8px 0 0;
+  font-size: 0.9rem;
+  text-align: center;
+  color: #7a8291;
+}
+
+/* Mensaje verde de que algo salió bien (por ejemplo, "Datos importados") */
+.exito {
+  margin: 12px 0 0;
+  padding: 12px 14px;
+  color: #2e7d32;
+  background: #e8f5e9;
+  border-radius: 10px;
+  font-weight: 600;
+}

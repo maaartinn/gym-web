@@ -1234,6 +1234,243 @@ document.getElementById("mes-siguiente").addEventListener("click", function () {
 
 
 // ============================================================
+// COPIA DE SEGURIDAD
+// "Exportar" crea un archivo con las rutinas, los ejercicios propios y
+// los entrenamientos. "Importar" lo lee y reemplaza los datos actuales.
+// El archivo lleva el número de versión del formato, así que una copia
+// antigua se puede convertir al formato nuevo con actualizarFormato().
+// El entrenamiento en curso (si lo hay) no entra en la copia ni se toca.
+// ============================================================
+const TIPO_COPIA = "copia-de-seguridad-mi-app-gym";
+
+// Los datos que entran en la copia, y cómo se comprueba cada elemento
+const CLAVES_COPIA = [CLAVE_MIS_RUTINAS, CLAVE_MIS_EJERCICIOS, CLAVE_ENTRENAMIENTOS];
+
+// "1 rutina", "3 rutinas"...
+function cantidad(numero, singular, plural) {
+  return numero === 1 ? "1 " + singular : numero + " " + plural;
+}
+
+// "2 rutinas, 1 ejercicio propio y 5 entrenamientos"
+function textoDatos(datos) {
+  return cantidad(datos[CLAVE_MIS_RUTINAS].length, "rutina", "rutinas") + ", " +
+    cantidad(datos[CLAVE_MIS_EJERCICIOS].length, "ejercicio propio", "ejercicios propios") + " y " +
+    cantidad(datos[CLAVE_ENTRENAMIENTOS].length, "entrenamiento", "entrenamientos");
+}
+
+function datosActuales() {
+  const datos = {};
+  CLAVES_COPIA.forEach(function (clave) {
+    datos[clave] = leerLista(clave);
+  });
+  return datos;
+}
+
+// Al entrar en la pantalla: mensajes ocultos y resumen de lo que hay guardado
+function abrirCopia() {
+  document.getElementById("error-copia").hidden = true;
+  document.getElementById("exito-copia").hidden = true;
+  document.getElementById("datos-actuales").textContent = "Ahora tienes " + textoDatos(datosActuales()) + ".";
+}
+
+function mostrarExito(mensaje) {
+  document.getElementById("error-copia").hidden = true;
+  const exito = document.getElementById("exito-copia");
+  exito.textContent = mensaje;
+  exito.hidden = false;
+}
+
+function mostrarErrorCopia(mensaje) {
+  document.getElementById("exito-copia").hidden = true;
+  mostrarError(document.getElementById("error-copia"), mensaje);
+}
+
+// ---------- Exportar ----------
+
+// "Exportar datos": crea el archivo y lo descarga.
+// En el móvil se abre el menú de compartir (para guardarlo en Archivos,
+// mandarlo por correo...), si el navegador lo permite con este tipo de archivo.
+async function exportarDatos() {
+  const copia = {
+    tipo: TIPO_COPIA,
+    version: VERSION_DATOS,
+    fecha: new Date().toISOString(),
+    datos: datosActuales()
+  };
+  const nombreArchivo = "copia-gym-" + claveDia(new Date()) + ".json";
+  const archivo = new File([JSON.stringify(copia, null, 2)], nombreArchivo, { type: "application/json" });
+
+  const esMovil = window.matchMedia("(pointer: coarse)").matches;
+  if (esMovil && navigator.canShare && navigator.canShare({ files: [archivo] })) {
+    try {
+      await navigator.share({ files: [archivo], title: "Copia de seguridad" });
+      mostrarExito("Copia creada. Guárdala en un sitio seguro.");
+      return;
+    } catch (error) {
+      if (error.name === "AbortError") {
+        return; // La persona cerró el menú de compartir: no pasa nada
+      }
+      // Si compartir falla por otro motivo, se descarga de la forma normal
+    }
+  }
+
+  const enlace = document.createElement("a");
+  enlace.href = URL.createObjectURL(archivo);
+  enlace.download = nombreArchivo;
+  document.body.appendChild(enlace);
+  enlace.click();
+  enlace.remove();
+  setTimeout(function () {
+    URL.revokeObjectURL(enlace.href);
+  }, 10000);
+
+  mostrarExito("Copia descargada: " + nombreArchivo + ". Guárdala en un sitio seguro.");
+}
+
+document.getElementById("boton-exportar").addEventListener("click", exportarDatos);
+
+// ---------- Comprobar un archivo ----------
+
+function esTexto(valor) {
+  return typeof valor === "string" && valor !== "";
+}
+
+function esFecha(valor) {
+  return typeof valor === "string" && !isNaN(Date.parse(valor));
+}
+
+function esMedicion(valor) {
+  return Object.prototype.hasOwnProperty.call(NOMBRES_MEDICION, valor);
+}
+
+function esListaDe(valor, comprobar) {
+  return Array.isArray(valor) && valor.every(comprobar);
+}
+
+function esRutinaValida(rutina) {
+  return Boolean(rutina) && esTexto(rutina.id) && esTexto(rutina.nombre) && esListaDe(rutina.ejercicios, esTexto);
+}
+
+function esEjercicioValido(ejercicio) {
+  return Boolean(ejercicio) && esTexto(ejercicio.id) && esTexto(ejercicio.nombre) &&
+    typeof ejercicio.grupo === "string" && esMedicion(ejercicio.medicion);
+}
+
+// Una serie guardada tiene números en los campos de su tipo: { kg: 40, reps: 10 }
+function esSerieValida(serie, medicion) {
+  return Boolean(serie) && camposDe(medicion).every(function (campo) {
+    return typeof serie[campo.nombre] === "number" && isFinite(serie[campo.nombre]);
+  });
+}
+
+function esEntrenamientoValido(entrenamiento) {
+  return Boolean(entrenamiento) && esTexto(entrenamiento.id) &&
+    esFecha(entrenamiento.fecha) && esFecha(entrenamiento.inicio) &&
+    Boolean(entrenamiento.rutina) && typeof entrenamiento.rutina.nombre === "string" &&
+    esListaDe(entrenamiento.ejercicios, function (ejercicio) {
+      return Boolean(ejercicio) && esTexto(ejercicio.id) && esTexto(ejercicio.nombre) && esMedicion(ejercicio.medicion) &&
+        esListaDe(ejercicio.series, function (serie) {
+          return esSerieValida(serie, ejercicio.medicion);
+        });
+    });
+}
+
+const COMPROBAR_COPIA = {};
+COMPROBAR_COPIA[CLAVE_MIS_RUTINAS] = esRutinaValida;
+COMPROBAR_COPIA[CLAVE_MIS_EJERCICIOS] = esEjercicioValido;
+COMPROBAR_COPIA[CLAVE_ENTRENAMIENTOS] = esEntrenamientoValido;
+
+// Lee el texto de un archivo de copia. Devuelve { datos } si es válido
+// (ya convertido al formato actual) o { error } con un mensaje si no lo es.
+function comprobarCopia(texto) {
+  let copia;
+  try {
+    copia = JSON.parse(texto);
+  } catch (error) {
+    return { error: "Este archivo no es una copia de seguridad de la app." };
+  }
+
+  if (!copia || copia.tipo !== TIPO_COPIA || typeof copia.version !== "number" || !copia.datos) {
+    return { error: "Este archivo no es una copia de seguridad de la app." };
+  }
+  if (copia.version > VERSION_DATOS) {
+    return { error: "Esta copia es de una versión más nueva de la app. Actualiza la app (recarga la página) e inténtalo de nuevo." };
+  }
+
+  const datos = {};
+  for (const clave of CLAVES_COPIA) {
+    const lista = actualizarFormato(clave, copia.version, copia.datos[clave]);
+    if (!esListaDe(lista, COMPROBAR_COPIA[clave])) {
+      return { error: "El archivo está dañado o incompleto. No se ha cambiado nada." };
+    }
+    datos[clave] = lista;
+  }
+  return { datos: datos };
+}
+
+// ---------- Importar ----------
+
+const campoArchivo = document.getElementById("archivo-importar");
+
+// "Importar datos" abre el selector de archivos
+document.getElementById("boton-importar").addEventListener("click", function () {
+  campoArchivo.click();
+});
+
+// Cuando se elige un archivo: se comprueba, se pide confirmación y se reemplazan los datos
+campoArchivo.addEventListener("change", async function () {
+  const archivo = campoArchivo.files[0];
+  campoArchivo.value = ""; // Así se puede volver a elegir el mismo archivo
+  if (!archivo) {
+    return;
+  }
+
+  let texto;
+  try {
+    texto = await archivo.text();
+  } catch (error) {
+    mostrarErrorCopia("No se ha podido leer el archivo.");
+    return;
+  }
+
+  const resultado = comprobarCopia(texto);
+  if (resultado.error) {
+    mostrarErrorCopia(resultado.error);
+    return;
+  }
+
+  const seguro = confirm(
+    "Se reemplazarán TODOS tus datos actuales (" + textoDatos(datosActuales()) + ") " +
+    "por los del archivo (" + textoDatos(resultado.datos) + "). Esto no se puede deshacer. ¿Continuar?"
+  );
+  if (!seguro) {
+    return;
+  }
+
+  // Se guarda lo que había, para dejarlo como estaba si algo falla a medias
+  const anteriores = CLAVES_COPIA.map(leerDatos);
+  const todoGuardado = CLAVES_COPIA.every(function (clave) {
+    return guardarDatos(clave, resultado.datos[clave]);
+  });
+
+  if (!todoGuardado) {
+    CLAVES_COPIA.forEach(function (clave, posicion) {
+      if (anteriores[posicion] === null) {
+        borrarDatos(clave);
+      } else {
+        guardarDatos(clave, anteriores[posicion]);
+      }
+    });
+    mostrarErrorCopia("No se ha podido importar. Puede que tu navegador no permita guardar datos. No se ha cambiado nada.");
+    return;
+  }
+
+  abrirCopia(); // Actualiza el resumen de lo que hay guardado
+  mostrarExito("Datos importados: " + textoDatos(resultado.datos) + ".");
+});
+
+
+// ============================================================
 // INICIO
 // Si hay un entrenamiento sin terminar, se ofrece continuarlo.
 // ============================================================
@@ -1267,7 +1504,8 @@ const PANTALLAS = {
   entrenar: { id: "pantalla-elegir-rutina", padre: "inicio", alEntrar: pintarElegirRutina },
   entrenamiento: { id: "pantalla-entrenamiento", padre: "inicio", alEntrar: pintarEntrenamiento },
   historial: { id: "pantalla-historial", padre: "inicio", alEntrar: pintarHistorial },
-  progreso: { id: "pantalla-progreso", padre: "inicio", alEntrar: abrirProgreso }
+  progreso: { id: "pantalla-progreso", padre: "inicio", alEntrar: abrirProgreso },
+  copia: { id: "pantalla-copia", padre: "inicio", alEntrar: abrirCopia }
 };
 
 // Averigua qué pantalla toca según la dirección.
@@ -1403,3 +1641,19 @@ document.querySelectorAll(".boton-volver").forEach(function (boton) {
 window.addEventListener("popstate", mostrarPantallaActual);
 
 mostrarPantallaActual();
+
+
+// ============================================================
+// FUNCIONAR SIN CONEXIÓN
+// Se registra el service worker (sw.js), que guarda los archivos de la
+// app para poder abrirla sin internet. Solo funciona cuando la app está
+// publicada en una web (https); al abrir index.html directamente desde
+// el ordenador no hace nada, y la app funciona igual.
+// ============================================================
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("sw.js").catch(function () {
+      // Si no se puede, la app sigue funcionando, solo que necesitará internet
+    });
+  });
+}

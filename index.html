@@ -4,6 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mi app de gym</title>
+
+  <!-- Para instalarla en la pantalla de inicio: nombre, icono y colores -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#ff5a1f">
+  <link rel="icon" href="iconos/icono-192.png" type="image/png">
+  <!-- El iPhone usa estas etiquetas para el icono y el nombre bajo el icono -->
+  <link rel="apple-touch-icon" href="iconos/icono-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Mi gym">
+
   <link rel="stylesheet" href="estilos.css">
 </head>
 <body>
@@ -25,6 +36,26 @@
         <button class="boton-grande" data-ir-a="historial">Historial</button>
         <button class="boton-grande" data-ir-a="progreso">Progreso</button>
       </div>
+
+      <button class="boton-opcion boton-copia" data-ir-a="copia">Copia de seguridad</button>
+    </section>
+
+    <!-- Pantalla de copia de seguridad -->
+    <section class="pantalla" id="pantalla-copia" hidden>
+      <button class="boton-volver">← Volver</button>
+      <h2>Copia de seguridad</h2>
+
+      <p class="texto-copia">Tus datos solo están guardados en este dispositivo. Exporta una copia de vez en cuando y guárdala en un sitio seguro (en Archivos, en tu correo…). Así podrás recuperarlos si cambias de móvil o se borran.</p>
+      <p class="texto-copia" id="datos-actuales"></p>
+
+      <button class="boton-principal" id="boton-exportar">Exportar datos</button>
+
+      <button class="boton-opcion boton-importar" id="boton-importar">Importar datos</button>
+      <input type="file" id="archivo-importar" accept=".json,application/json" hidden>
+      <p class="nota-copia">Al importar, tus datos actuales se reemplazan por los del archivo.</p>
+
+      <p class="error" id="error-copia" role="alert" hidden></p>
+      <p class="exito" id="exito-copia" role="status" hidden></p>
     </section>
 
     <!-- Pantalla de rutinas -->
