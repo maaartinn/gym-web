@@ -760,3 +760,90 @@ button {
   border-radius: 10px;
   font-weight: 600;
 }
+
+/* ---------- Notas de los ejercicios ---------- */
+
+/* Fila con el nombre del ejercicio y el botón "Nota" */
+.cabecera-bloque {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cabecera-bloque .bloque-titulo {
+  flex: 1;
+  min-width: 0;
+}
+
+.boton-nota {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1d2433;
+  background: #f2f4f7;
+  border: none;
+  border-radius: 10px;
+}
+
+.boton-nota:active {
+  background: #e2e6ec;
+}
+
+/* Botón "Nota" con la nota desplegada */
+.boton-nota[aria-expanded="true"] {
+  color: #ff5a1f;
+  background: #fff0ea;
+}
+
+/* La nota de la última vez, debajo de "Última vez: …" */
+.ultima-nota {
+  margin: 2px 4px 0;
+  font-size: 0.95rem;
+  font-style: italic;
+  color: #7a8291;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.zona-nota {
+  margin: 12px 4px 0;
+}
+
+.campo-nota {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: 1rem; /* 16px o más: así el iPhone no hace zoom al escribir */
+  line-height: 1.4;
+  color: inherit;
+  background: #fff;
+  border: 1px solid #c8cdd6;
+  border-radius: 10px;
+  resize: vertical;
+}
+
+.campo-nota:focus {
+  outline: 2px solid #ff5a1f;
+  border-color: transparent;
+}
+
+/* "45/300" */
+.contador-nota {
+  margin: 4px 0 0;
+  text-align: right;
+  font-size: 0.85rem;
+  color: #7a8291;
+}
+
+/* La nota en el detalle de un entrenamiento guardado */
+.nota-ejercicio {
+  margin: 10px 4px 0;
+  padding: 10px 12px;
+  background: #f2f4f7;
+  border-radius: 10px;
+  white-space: pre-wrap; /* Respeta los saltos de línea que se escribieron */
+  word-break: break-word;
+}

@@ -16,7 +16,7 @@
 // añade en actualizarFormato() el paso que convierte lo antiguo en lo
 // nuevo. Así no se pierde nada de lo que ya tenga guardado cada persona.
 // ============================================================
-const VERSION_DATOS = 1;
+const VERSION_DATOS = 2;
 
 const CLAVE_MIS_RUTINAS = "misRutinas";
 const CLAVE_MIS_EJERCICIOS = "misEjercicios";
@@ -33,13 +33,39 @@ function actualizarFormato(clave, version, datos) {
     version = 1;
   }
 
-  // Cuando exista la versión 2, aquí irá algo así:
-  // if (version === 1) {
+  // De la versión 1 a la 2: cada ejercicio de un entrenamiento (guardado
+  // o en curso) tiene una nota. Los antiguos no tenían: se les pone una
+  // nota vacía. Si ya tienen una (por ejemplo, guardada por una versión
+  // vieja de la app abierta en otro momento), se respeta.
+  if (version === 1) {
+    if (clave === CLAVE_ENTRENAMIENTOS && Array.isArray(datos)) {
+      datos.forEach(anadirNotasVacias);
+    }
+    if (clave === CLAVE_ENTRENAMIENTO_EN_CURSO && datos) {
+      anadirNotasVacias(datos);
+    }
+    version = 2;
+  }
+
+  // Cuando exista la versión 3, aquí irá algo así:
+  // if (version === 2) {
   //   datos = ...convertir los datos...;
-  //   version = 2;
+  //   version = 3;
   // }
 
   return datos;
+}
+
+// Pone nota: "" a los ejercicios de un entrenamiento que no tengan nota
+function anadirNotasVacias(entrenamiento) {
+  if (!entrenamiento || !Array.isArray(entrenamiento.ejercicios)) {
+    return;
+  }
+  entrenamiento.ejercicios.forEach(function (ejercicio) {
+    if (ejercicio && typeof ejercicio.nota !== "string") {
+      ejercicio.nota = "";
+    }
+  });
 }
 
 // Lee un dato guardado en el navegador, ya en el formato actual.
@@ -669,16 +695,21 @@ function textoSerie(serie, medicion) {
   return formatoNumero(serie.kg) + " kg x " + serie.reps;
 }
 
-// "Última vez: 40 kg x 10": la última serie de ese ejercicio en el
-// entrenamiento guardado más reciente que lo tenga. null si nunca se hizo.
-function textoUltimaVez(idEjercicio, entrenamientos) {
+// Lo que se hizo la última vez con un ejercicio, en el entrenamiento
+// guardado más reciente que lo tenga:
+//   { texto: "Última vez: 40 kg x 10", nota: "Subir peso" }
+// (nota es "" si no se escribió ninguna). null si nunca se hizo.
+function ultimaVez(idEjercicio, entrenamientos) {
   for (let i = entrenamientos.length - 1; i >= 0; i--) {
     const ejercicio = entrenamientos[i].ejercicios.find(function (hecho) {
       return hecho.id === idEjercicio;
     });
     if (ejercicio && ejercicio.series.length > 0) {
       const ultimaSerie = ejercicio.series[ejercicio.series.length - 1];
-      return "Última vez: " + textoSerie(ultimaSerie, ejercicio.medicion);
+      return {
+        texto: "Última vez: " + textoSerie(ultimaSerie, ejercicio.medicion),
+        nota: ejercicio.nota || ""
+      };
     }
   }
   return null;
@@ -714,7 +745,7 @@ function empezarEntrenamiento(rutina) {
     for (let i = 0; i < SERIES_POR_DEFECTO; i++) {
       series.push(serieVacia(ejercicio.medicion));
     }
-    ejercicios.push({ id: ejercicio.id, nombre: ejercicio.nombre, medicion: ejercicio.medicion, series: series });
+    ejercicios.push({ id: ejercicio.id, nombre: ejercicio.nombre, medicion: ejercicio.medicion, series: series, nota: "" });
   });
 
   if (ejercicios.length === 0) {
@@ -756,23 +787,79 @@ function alCambiarEntrenamiento() {
   document.getElementById("error-entreno").hidden = true;
 }
 
-// El bloque de un ejercicio: nombre, "Última vez", filas de series y botones
+const LARGO_MAXIMO_NOTA = 300;
+
+// Ejercicios con la nota desplegada aunque esté vacía (porque se pulsó "Nota").
+// Así sigue abierta al volver a dibujar el bloque (al añadir o quitar una serie).
+const notasAbiertas = new WeakSet();
+
+// El bloque de un ejercicio: nombre con el botón "Nota", "Última vez",
+// la nota (si está desplegada), filas de series y botones
 function crearBloqueEjercicio(ejercicio, anteriores) {
   const bloque = document.createElement("div");
   bloque.className = "bloque-ejercicio";
 
+  const cabecera = document.createElement("div");
+  cabecera.className = "cabecera-bloque";
   const titulo = document.createElement("h3");
   titulo.className = "bloque-titulo";
   titulo.textContent = ejercicio.nombre;
-  bloque.appendChild(titulo);
+  const botonNota = crearBotonPequeno("boton-nota", "Nota", "Nota de " + ejercicio.nombre, function () {
+    const abrir = zonaNota.hidden;
+    zonaNota.hidden = !abrir;
+    botonNota.setAttribute("aria-expanded", String(abrir));
+    if (abrir) {
+      notasAbiertas.add(ejercicio);
+      campoNota.focus();
+    } else {
+      notasAbiertas.delete(ejercicio);
+    }
+  });
+  cabecera.appendChild(titulo);
+  cabecera.appendChild(botonNota);
+  bloque.appendChild(cabecera);
 
-  const ultimaVez = textoUltimaVez(ejercicio.id, anteriores);
-  if (ultimaVez) {
+  const anterior = ultimaVez(ejercicio.id, anteriores);
+  if (anterior) {
     const referencia = document.createElement("p");
     referencia.className = "ultima-vez";
-    referencia.textContent = ultimaVez;
+    referencia.textContent = anterior.texto;
     bloque.appendChild(referencia);
+    if (anterior.nota) {
+      const notaAnterior = document.createElement("p");
+      notaAnterior.className = "ultima-nota";
+      notaAnterior.textContent = "Nota: " + anterior.nota;
+      bloque.appendChild(notaAnterior);
+    }
   }
+
+  // La nota: un campo de texto de hasta 300 caracteres, con contador.
+  // Se ve desplegada si ya tiene algo escrito o si se abrió con "Nota".
+  const zonaNota = document.createElement("div");
+  zonaNota.className = "zona-nota";
+  const campoNota = document.createElement("textarea");
+  campoNota.className = "campo-nota";
+  campoNota.rows = 3;
+  campoNota.maxLength = LARGO_MAXIMO_NOTA;
+  campoNota.placeholder = "Por ejemplo: subir peso la próxima vez, molestia en el hombro…";
+  campoNota.value = ejercicio.nota || "";
+  campoNota.setAttribute("aria-label", "Nota de " + ejercicio.nombre);
+  const contador = document.createElement("p");
+  contador.className = "contador-nota";
+  function actualizarContador() {
+    contador.textContent = campoNota.value.length + "/" + LARGO_MAXIMO_NOTA;
+  }
+  actualizarContador();
+  campoNota.addEventListener("input", function () {
+    ejercicio.nota = campoNota.value.slice(0, LARGO_MAXIMO_NOTA);
+    actualizarContador();
+    alCambiarEntrenamiento();
+  });
+  zonaNota.appendChild(campoNota);
+  zonaNota.appendChild(contador);
+  zonaNota.hidden = !(notasAbiertas.has(ejercicio) || campoNota.value !== "");
+  botonNota.setAttribute("aria-expanded", String(!zonaNota.hidden));
+  bloque.appendChild(zonaNota);
 
   const campos = camposDe(ejercicio.medicion);
   bloque.appendChild(crearCabeceraSeries(campos));
@@ -895,6 +982,7 @@ function terminarEntrenamiento() {
   const error = document.getElementById("error-entreno");
   const ejerciciosHechos = [];
   let haySeriesSinMarcar = false;
+  const notasSinGuardar = []; // Nombres de ejercicios con nota pero sin series hechas
 
   for (const ejercicio of entrenamientoEnCurso.ejercicios) {
     const campos = camposDe(ejercicio.medicion);
@@ -919,8 +1007,11 @@ function terminarEntrenamiento() {
       seriesHechas.push(numeros);
     }
 
+    const nota = (ejercicio.nota || "").trim();
     if (seriesHechas.length > 0) {
-      ejerciciosHechos.push({ id: ejercicio.id, nombre: ejercicio.nombre, medicion: ejercicio.medicion, series: seriesHechas });
+      ejerciciosHechos.push({ id: ejercicio.id, nombre: ejercicio.nombre, medicion: ejercicio.medicion, series: seriesHechas, nota: nota });
+    } else if (nota !== "") {
+      notasSinGuardar.push(ejercicio.nombre); // Sin series hechas, el ejercicio (y su nota) no se guarda
     }
   }
 
@@ -929,11 +1020,15 @@ function terminarEntrenamiento() {
     return;
   }
 
+  const avisos = [];
   if (haySeriesSinMarcar) {
-    const seguro = confirm("Hay series con datos que no están marcadas como hechas. Esas no se guardarán. ¿Terminar igualmente?");
-    if (!seguro) {
-      return;
-    }
+    avisos.push("Hay series con datos que no están marcadas como hechas. Esas no se guardarán.");
+  }
+  if (notasSinGuardar.length > 0) {
+    avisos.push("La nota de «" + notasSinGuardar.join("», «") + "» no se guardará, porque ese ejercicio no tiene ninguna serie hecha.");
+  }
+  if (avisos.length > 0 && !confirm(avisos.join("\n\n") + "\n\n¿Terminar igualmente?")) {
+    return;
   }
 
   const entrenamiento = {
@@ -1061,6 +1156,13 @@ function pintarResumen(entrenamiento, recienTerminado) {
       lista.appendChild(elemento);
     });
     bloque.appendChild(lista);
+
+    if (ejercicio.nota) {
+      const nota = document.createElement("p");
+      nota.className = "nota-ejercicio";
+      nota.textContent = ejercicio.nota;
+      bloque.appendChild(nota);
+    }
 
     contenedor.appendChild(bloque);
   });
@@ -1385,6 +1487,7 @@ function esEntrenamientoValido(entrenamiento) {
     Boolean(entrenamiento.rutina) && typeof entrenamiento.rutina.nombre === "string" &&
     esListaDe(entrenamiento.ejercicios, function (ejercicio) {
       return Boolean(ejercicio) && esTexto(ejercicio.id) && esTexto(ejercicio.nombre) && esMedicion(ejercicio.medicion) &&
+        typeof ejercicio.nota === "string" && // Las copias antiguas, sin notas, ya llegan aquí con nota "" (actualizarFormato)
         esListaDe(ejercicio.series, function (serie) {
           return esSerieValida(serie, ejercicio.medicion);
         });
