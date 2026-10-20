@@ -12,6 +12,13 @@
     <!-- Pantalla de inicio -->
     <section class="pantalla" id="pantalla-inicio">
       <h1>Mi app de gym</h1>
+
+      <!-- Solo se ve si hay un entrenamiento sin terminar -->
+      <div class="aviso-continuar" id="aviso-continuar" hidden>
+        <p>Tienes un entrenamiento sin terminar: <strong id="continuar-nombre"></strong></p>
+        <button class="boton-principal" id="boton-continuar">Continuar entrenamiento</button>
+      </div>
+
       <div class="menu">
         <button class="boton-grande" data-ir-a="rutinas">Rutinas</button>
         <button class="boton-grande" data-ir-a="entrenar">Empezar entrenamiento</button>
@@ -112,6 +119,47 @@
         <p class="error" id="error-ejercicio" role="alert" hidden></p>
         <button class="boton-principal" type="submit">Crear y añadir a la rutina</button>
       </form>
+    </section>
+
+    <!-- Pantalla para elegir la rutina del entrenamiento -->
+    <section class="pantalla" id="pantalla-elegir-rutina" hidden>
+      <button class="boton-volver">← Volver</button>
+      <h2>¿Qué rutina vas a hacer?</h2>
+
+      <h3>Rutinas predeterminadas</h3>
+      <div class="lista-tarjetas" id="entrenar-predeterminadas"></div>
+
+      <h3>Mis rutinas</h3>
+      <div class="lista-tarjetas" id="entrenar-mias"></div>
+      <p class="vacio" id="entrenar-mias-vacio">Todavía no tienes rutinas propias</p>
+    </section>
+
+    <!-- Pantalla del entrenamiento en curso -->
+    <section class="pantalla" id="pantalla-entrenamiento" hidden>
+      <button class="boton-volver">← Volver</button>
+      <h2 id="entreno-nombre"></h2>
+      <p class="explicacion">Apunta cada serie y marca la casilla cuando la termines. Todo se guarda solo.</p>
+      <p class="error" id="error-autoguardado" role="alert" hidden>Tu navegador no deja guardar datos: si cierras o recargas la página, perderás lo apuntado.</p>
+
+      <div id="entreno-ejercicios"></div>
+
+      <p class="error" id="error-entreno" role="alert" hidden></p>
+      <button class="boton-principal" id="boton-terminar-entreno">Terminar entrenamiento</button>
+      <div class="acciones-rutina">
+        <button class="boton-peligro" id="boton-cancelar-entreno">Cancelar entrenamiento</button>
+      </div>
+    </section>
+
+    <!-- Pantalla con el resumen del entrenamiento guardado -->
+    <section class="pantalla" id="pantalla-resumen" hidden>
+      <button class="boton-volver">← Volver</button>
+      <h2>¡Entrenamiento guardado!</h2>
+      <p class="resumen-rutina" id="resumen-rutina"></p>
+      <p class="resumen-datos" id="resumen-datos"></p>
+
+      <div id="resumen-ejercicios"></div>
+
+      <button class="boton-principal" id="boton-resumen-listo">Volver al inicio</button>
     </section>
 
     <!-- Pantalla para lo que todavía no está hecho -->

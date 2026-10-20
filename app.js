@@ -9,29 +9,83 @@
 // GUARDAR Y LEER DATOS EN EL NAVEGADOR
 // Lo que crea cada persona se guarda en el navegador (localStorage),
 // separado de los datos fijos del código.
+//
+// Cada dato se guarda junto con el número de versión de su formato:
+//   { version: 1, datos: [...] }
+// Si algún día cambia la forma de los datos, se sube VERSION_DATOS y se
+// añade en actualizarFormato() el paso que convierte lo antiguo en lo
+// nuevo. Así no se pierde nada de lo que ya tenga guardado cada persona.
 // ============================================================
+const VERSION_DATOS = 1;
+
 const CLAVE_MIS_RUTINAS = "misRutinas";
 const CLAVE_MIS_EJERCICIOS = "misEjercicios";
+const CLAVE_ENTRENAMIENTOS = "entrenamientos";
+const CLAVE_ENTRENAMIENTO_EN_CURSO = "entrenamientoEnCurso";
 
-// Lee una lista guardada en el navegador (o una lista vacía si no hay)
-function leerLista(clave) {
+// Convierte unos datos guardados con un formato antiguo al formato actual,
+// paso a paso: de la versión 0 a la 1, de la 1 a la 2...
+// "clave" dice qué dato es, por si un cambio solo afecta a uno.
+function actualizarFormato(clave, version, datos) {
+  // Versión 0: antes de que hubiera número de versión, las listas se
+  // guardaban tal cual. Su contenido es igual que en la versión 1.
+  if (version === 0) {
+    version = 1;
+  }
+
+  // Cuando exista la versión 2, aquí irá algo así:
+  // if (version === 1) {
+  //   datos = ...convertir los datos...;
+  //   version = 2;
+  // }
+
+  return datos;
+}
+
+// Lee un dato guardado en el navegador, ya en el formato actual.
+// Devuelve null si no hay nada o no se puede leer.
+function leerDatos(clave) {
   try {
-    const guardada = localStorage.getItem(clave);
-    const lista = guardada ? JSON.parse(guardada) : [];
-    return Array.isArray(lista) ? lista : [];
+    const texto = localStorage.getItem(clave);
+    if (!texto) {
+      return null;
+    }
+    const guardado = JSON.parse(texto);
+    if (Array.isArray(guardado)) {
+      return actualizarFormato(clave, 0, guardado); // Formato antiguo, sin versión
+    }
+    if (guardado && typeof guardado.version === "number") {
+      return actualizarFormato(clave, guardado.version, guardado.datos);
+    }
+    return null;
   } catch (error) {
-    return [];
+    return null;
   }
 }
 
-// Guarda una lista en el navegador. Devuelve false si el navegador no deja guardar.
-function guardarLista(clave, lista) {
+// Guarda un dato en el navegador, con el número de versión actual.
+// Devuelve false si el navegador no deja guardar.
+function guardarDatos(clave, datos) {
   try {
-    localStorage.setItem(clave, JSON.stringify(lista));
+    localStorage.setItem(clave, JSON.stringify({ version: VERSION_DATOS, datos: datos }));
     return true;
   } catch (error) {
     return false;
   }
+}
+
+function borrarDatos(clave) {
+  try {
+    localStorage.removeItem(clave);
+  } catch (error) {
+    // Si no se puede borrar, no pasa nada grave: se ignora
+  }
+}
+
+// Lee una lista guardada en el navegador (o una lista vacía si no hay)
+function leerLista(clave) {
+  const lista = leerDatos(clave);
+  return Array.isArray(lista) ? lista : [];
 }
 
 
@@ -94,7 +148,7 @@ function guardarEnMisRutinas(rutina) {
     misRutinas.push(rutina);       // Es nueva: se añade al final
   }
 
-  return guardarLista(CLAVE_MIS_RUTINAS, misRutinas);
+  return guardarDatos(CLAVE_MIS_RUTINAS, misRutinas);
 }
 
 // Un id nuevo para una rutina propia
@@ -151,28 +205,29 @@ function crearFlecha() {
   return flecha;
 }
 
-// Tarjeta de una rutina. Al pulsarla, abre su detalle.
-function crearTarjetaRutina(rutina, tipo) {
-  const tarjeta = crearTarjeta(rutina.nombre, textoCantidad(rutina), crearFlecha());
-  tarjeta.addEventListener("click", function () {
-    irA(tipo + "-" + rutina.id);
+// Rellena una lista con una tarjeta por rutina.
+// Al pulsar una tarjeta, se llama a alElegir con esa rutina.
+function pintarListaRutinas(idLista, rutinas, alElegir) {
+  const lista = document.getElementById(idLista);
+  lista.innerHTML = "";
+  rutinas.forEach(function (rutina) {
+    const tarjeta = crearTarjeta(rutina.nombre, textoCantidad(rutina), crearFlecha());
+    tarjeta.addEventListener("click", function () {
+      alElegir(rutina);
+    });
+    lista.appendChild(tarjeta);
   });
-  return tarjeta;
 }
 
-// Rellena la pantalla de rutinas con las tarjetas
+// Rellena la pantalla de rutinas con las tarjetas. Al pulsar una, se abre su detalle.
 function pintarRutinas() {
-  const listaPredeterminadas = document.getElementById("lista-predeterminadas");
-  listaPredeterminadas.innerHTML = "";
-  RUTINAS_PREDETERMINADAS.forEach(function (rutina) {
-    listaPredeterminadas.appendChild(crearTarjetaRutina(rutina, "predeterminada"));
+  pintarListaRutinas("lista-predeterminadas", RUTINAS_PREDETERMINADAS, function (rutina) {
+    irA("predeterminada-" + rutina.id);
   });
 
   const misRutinas = leerLista(CLAVE_MIS_RUTINAS);
-  const listaMisRutinas = document.getElementById("lista-mis-rutinas");
-  listaMisRutinas.innerHTML = "";
-  misRutinas.forEach(function (rutina) {
-    listaMisRutinas.appendChild(crearTarjetaRutina(rutina, "mia"));
+  pintarListaRutinas("lista-mis-rutinas", misRutinas, function (rutina) {
+    irA("mia-" + rutina.id);
   });
   document.getElementById("mis-rutinas-vacio").hidden = misRutinas.length > 0;
 }
@@ -238,7 +293,7 @@ document.getElementById("boton-borrar-rutina").addEventListener("click", functio
     return rutina.id !== rutinaEnDetalle.id;
   });
 
-  if (!guardarLista(CLAVE_MIS_RUTINAS, misRutinas)) {
+  if (!guardarDatos(CLAVE_MIS_RUTINAS, misRutinas)) {
     mostrarError(document.getElementById("error-detalle"), "No se ha podido borrar. Puede que tu navegador no permita guardar datos.");
     return;
   }
@@ -504,7 +559,7 @@ formularioEjercicio.addEventListener("submit", function (evento) {
 
   const misEjercicios = leerLista(CLAVE_MIS_EJERCICIOS);
   misEjercicios.push(nuevo);
-  if (!guardarLista(CLAVE_MIS_EJERCICIOS, misEjercicios)) {
+  if (!guardarDatos(CLAVE_MIS_EJERCICIOS, misEjercicios)) {
     mostrarError(errorEjercicio, "No se ha podido guardar. Puede que tu navegador no permita guardar datos.");
     return;
   }
@@ -519,6 +574,449 @@ campoNombreEjercicio.addEventListener("input", function () {
 
 
 // ============================================================
+// ENTRENAMIENTO EN CURSO
+// Se guarda en el navegador cada vez que se cambia algo, para no
+// perderlo si se recarga o se cierra la página.
+// Mientras se entrena, cada serie guarda los textos tal cual se escriben.
+// Al terminar, se pasan a números y se guardan solo las series hechas.
+// ============================================================
+
+// Los campos de cada serie, según cómo se mide el ejercicio
+//   - decimales: si admite decimales (por ejemplo, 12,5 kg)
+//   - puedeSerCero: si vale 0 (0 kg tiene sentido; 0 repeticiones, no)
+const CAMPOS_SERIE = {
+  "peso": [
+    { nombre: "kg", titulo: "kg", decimales: true, puedeSerCero: true },
+    { nombre: "reps", titulo: "Reps", decimales: false, puedeSerCero: false }
+  ],
+  "peso-corporal": [
+    { nombre: "reps", titulo: "Reps", decimales: false, puedeSerCero: false }
+  ],
+  "tiempo": [
+    { nombre: "segundos", titulo: "Segundos", decimales: false, puedeSerCero: false }
+  ]
+};
+
+const SERIES_POR_DEFECTO = 3;
+
+let entrenamientoEnCurso = leerEntrenamientoEnCurso();
+
+function leerEntrenamientoEnCurso() {
+  const guardado = leerDatos(CLAVE_ENTRENAMIENTO_EN_CURSO);
+  return guardado && Array.isArray(guardado.ejercicios) ? guardado : null;
+}
+
+function camposDe(medicion) {
+  return CAMPOS_SERIE[medicion] || CAMPOS_SERIE.peso;
+}
+
+// Una serie sin rellenar, con los campos que tocan: { hecha: false, kg: "", reps: "" }
+function serieVacia(medicion) {
+  const serie = { hecha: false };
+  camposDe(medicion).forEach(function (campo) {
+    serie[campo.nombre] = "";
+  });
+  return serie;
+}
+
+// Guarda el entrenamiento en curso. Si el navegador no deja, lo avisa en pantalla.
+function guardarEntrenamientoEnCurso() {
+  const guardado = guardarDatos(CLAVE_ENTRENAMIENTO_EN_CURSO, entrenamientoEnCurso);
+  document.getElementById("error-autoguardado").hidden = guardado;
+}
+
+function descartarEntrenamientoEnCurso() {
+  entrenamientoEnCurso = null;
+  borrarDatos(CLAVE_ENTRENAMIENTO_EN_CURSO);
+}
+
+// 12.5 → "12,5"
+function formatoNumero(numero) {
+  return String(numero).replace(".", ",");
+}
+
+// Pasa un texto escrito a número: "12,5" → 12.5. Si no es un número válido, devuelve null.
+function leerNumero(texto, decimales) {
+  const limpio = texto.trim().replace(",", ".");
+  const formato = decimales ? /^\d+(\.\d+)?$/ : /^\d+$/;
+  return formato.test(limpio) ? Number(limpio) : null;
+}
+
+// Texto de una serie guardada: "40 kg x 10", "12 repeticiones", "30 segundos"
+function textoSerie(serie, medicion) {
+  if (medicion === "peso-corporal") {
+    return serie.reps === 1 ? "1 repetición" : serie.reps + " repeticiones";
+  }
+  if (medicion === "tiempo") {
+    return serie.segundos === 1 ? "1 segundo" : serie.segundos + " segundos";
+  }
+  return formatoNumero(serie.kg) + " kg x " + serie.reps;
+}
+
+// "Última vez: 40 kg x 10": la última serie de ese ejercicio en el
+// entrenamiento guardado más reciente que lo tenga. null si nunca se hizo.
+function textoUltimaVez(idEjercicio, entrenamientos) {
+  for (let i = entrenamientos.length - 1; i >= 0; i--) {
+    const ejercicio = entrenamientos[i].ejercicios.find(function (hecho) {
+      return hecho.id === idEjercicio;
+    });
+    if (ejercicio && ejercicio.series.length > 0) {
+      const ultimaSerie = ejercicio.series[ejercicio.series.length - 1];
+      return "Última vez: " + textoSerie(ultimaSerie, ejercicio.medicion);
+    }
+  }
+  return null;
+}
+
+// Rellena la pantalla "¿Qué rutina vas a hacer?"
+function pintarElegirRutina() {
+  pintarListaRutinas("entrenar-predeterminadas", RUTINAS_PREDETERMINADAS, empezarEntrenamiento);
+
+  const misRutinas = leerLista(CLAVE_MIS_RUTINAS);
+  pintarListaRutinas("entrenar-mias", misRutinas, empezarEntrenamiento);
+  document.getElementById("entrenar-mias-vacio").hidden = misRutinas.length > 0;
+}
+
+// Empieza un entrenamiento con una rutina. Se copian los nombres de la
+// rutina y de los ejercicios, para que el entrenamiento no cambie aunque
+// después se edite o se borre la rutina.
+function empezarEntrenamiento(rutina) {
+  if (entrenamientoEnCurso) {
+    const seguro = confirm("Tienes un entrenamiento sin terminar («" + entrenamientoEnCurso.rutina.nombre + "»). ¿Quieres descartarlo y empezar uno nuevo?");
+    if (!seguro) {
+      return;
+    }
+  }
+
+  const ejercicios = [];
+  rutina.ejercicios.forEach(function (id) {
+    const ejercicio = buscarEjercicio(id);
+    if (!ejercicio) {
+      return; // Un ejercicio que ya no existe no se puede apuntar
+    }
+    const series = [];
+    for (let i = 0; i < SERIES_POR_DEFECTO; i++) {
+      series.push(serieVacia(ejercicio.medicion));
+    }
+    ejercicios.push({ id: ejercicio.id, nombre: ejercicio.nombre, medicion: ejercicio.medicion, series: series });
+  });
+
+  if (ejercicios.length === 0) {
+    mostrarAvisoBreve("Esta rutina no tiene ejercicios");
+    return;
+  }
+
+  entrenamientoEnCurso = {
+    id: "t" + Date.now(),
+    inicio: new Date().toISOString(),
+    rutina: { nombre: rutina.nombre },
+    ejercicios: ejercicios
+  };
+  guardarEntrenamientoEnCurso();
+
+  // Se sustituye la pantalla de elegir rutina por la del entrenamiento:
+  // así "Volver" lleva al inicio, no a elegir rutina otra vez.
+  history.replaceState(history.state, "", "#entrenamiento");
+  mostrarPantallaActual();
+}
+
+// Rellena la pantalla del entrenamiento en curso
+function pintarEntrenamiento() {
+  document.getElementById("entreno-nombre").textContent = entrenamientoEnCurso.rutina.nombre;
+
+  const anteriores = leerLista(CLAVE_ENTRENAMIENTOS);
+  const contenedor = document.getElementById("entreno-ejercicios");
+  contenedor.innerHTML = "";
+  entrenamientoEnCurso.ejercicios.forEach(function (ejercicio) {
+    contenedor.appendChild(crearBloqueEjercicio(ejercicio, anteriores));
+  });
+
+  document.getElementById("error-entreno").hidden = true;
+}
+
+// Lo que pasa cada vez que se escribe algo o se marca una casilla
+function alCambiarEntrenamiento() {
+  guardarEntrenamientoEnCurso();
+  document.getElementById("error-entreno").hidden = true;
+}
+
+// El bloque de un ejercicio: nombre, "Última vez", filas de series y botones
+function crearBloqueEjercicio(ejercicio, anteriores) {
+  const bloque = document.createElement("div");
+  bloque.className = "bloque-ejercicio";
+
+  const titulo = document.createElement("h3");
+  titulo.className = "bloque-titulo";
+  titulo.textContent = ejercicio.nombre;
+  bloque.appendChild(titulo);
+
+  const ultimaVez = textoUltimaVez(ejercicio.id, anteriores);
+  if (ultimaVez) {
+    const referencia = document.createElement("p");
+    referencia.className = "ultima-vez";
+    referencia.textContent = ultimaVez;
+    bloque.appendChild(referencia);
+  }
+
+  const campos = camposDe(ejercicio.medicion);
+  bloque.appendChild(crearCabeceraSeries(campos));
+  ejercicio.series.forEach(function (serie, posicion) {
+    bloque.appendChild(crearFilaSerie(serie, posicion + 1, campos));
+  });
+
+  // Vuelve a dibujar solo este bloque (al añadir o quitar una serie)
+  function repintar() {
+    bloque.replaceWith(crearBloqueEjercicio(ejercicio, anteriores));
+  }
+
+  const botones = document.createElement("div");
+  botones.className = "botones-series";
+
+  const anadir = crearBotonPequeno("boton-serie", "+ Añadir serie", "Añadir serie", function () {
+    ejercicio.series.push(serieVacia(ejercicio.medicion));
+    alCambiarEntrenamiento();
+    repintar();
+  });
+
+  const quitar = crearBotonPequeno("boton-serie", "− Quitar serie", "Quitar la última serie", function () {
+    const ultima = ejercicio.series[ejercicio.series.length - 1];
+    const tieneDatos = ultima.hecha || campos.some(function (campo) {
+      return ultima[campo.nombre].trim() !== "";
+    });
+    if (tieneDatos && !confirm("La serie " + ejercicio.series.length + " tiene datos apuntados. ¿Quitarla?")) {
+      return;
+    }
+    ejercicio.series.pop();
+    alCambiarEntrenamiento();
+    repintar();
+  });
+  quitar.disabled = ejercicio.series.length <= 1;
+
+  botones.appendChild(anadir);
+  botones.appendChild(quitar);
+  bloque.appendChild(botones);
+  return bloque;
+}
+
+// Fila de títulos encima de las series: "Serie | kg | Reps | Hecha"
+function crearCabeceraSeries(campos) {
+  const fila = document.createElement("div");
+  fila.className = "fila-serie cabecera-series campos-" + campos.length;
+  ["Serie"].concat(campos.map(function (campo) { return campo.titulo; }), ["Hecha"]).forEach(function (texto) {
+    const celda = document.createElement("span");
+    celda.textContent = texto;
+    fila.appendChild(celda);
+  });
+  return fila;
+}
+
+// Una fila de serie: número, campos para escribir y casilla de "hecha"
+function crearFilaSerie(serie, numero, campos) {
+  const fila = document.createElement("div");
+  fila.className = "fila-serie campos-" + campos.length;
+  fila.classList.toggle("serie-hecha", serie.hecha);
+
+  const numeroSerie = document.createElement("span");
+  numeroSerie.className = "numero-serie";
+  numeroSerie.textContent = numero;
+  fila.appendChild(numeroSerie);
+
+  campos.forEach(function (campo) {
+    const entrada = document.createElement("input");
+    entrada.className = "campo-serie";
+    entrada.type = "text";
+    // inputmode hace que el móvil muestre el teclado de números
+    entrada.inputMode = campo.decimales ? "decimal" : "numeric";
+    entrada.autocomplete = "off";
+    entrada.value = serie[campo.nombre] || "";
+    entrada.setAttribute("aria-label", "Serie " + numero + ", " + campo.titulo);
+    entrada.addEventListener("input", function () {
+      serie[campo.nombre] = entrada.value;
+      alCambiarEntrenamiento();
+    });
+    fila.appendChild(entrada);
+  });
+
+  // La casilla va dentro de una etiqueta grande, para que sea fácil de pulsar
+  const etiqueta = document.createElement("label");
+  etiqueta.className = "casilla-hecha";
+  const casilla = document.createElement("input");
+  casilla.type = "checkbox";
+  casilla.checked = serie.hecha;
+  casilla.setAttribute("aria-label", "Serie " + numero + " hecha");
+  casilla.addEventListener("change", function () {
+    serie.hecha = casilla.checked;
+    fila.classList.toggle("serie-hecha", serie.hecha);
+    alCambiarEntrenamiento();
+  });
+  etiqueta.appendChild(casilla);
+  fila.appendChild(etiqueta);
+
+  return fila;
+}
+
+// Pasa los textos de una serie a números: { kg: 40, reps: 10 }.
+// Devuelve null si falta algún dato o no es un número válido.
+function convertirSerie(serie, campos) {
+  const numeros = {};
+  for (const campo of campos) {
+    const numero = leerNumero(serie[campo.nombre] || "", campo.decimales);
+    if (numero === null || (numero === 0 && !campo.puedeSerCero)) {
+      return null;
+    }
+    numeros[campo.nombre] = numero;
+  }
+  return numeros;
+}
+
+// "Terminar entrenamiento": comprueba los datos, guarda solo las series
+// hechas y muestra el resumen
+function terminarEntrenamiento() {
+  if (!entrenamientoEnCurso) {
+    return; // Evita guardarlo dos veces con un doble toque
+  }
+
+  const error = document.getElementById("error-entreno");
+  const ejerciciosHechos = [];
+  let haySeriesSinMarcar = false;
+
+  for (const ejercicio of entrenamientoEnCurso.ejercicios) {
+    const campos = camposDe(ejercicio.medicion);
+    const seriesHechas = [];
+
+    for (const serie of ejercicio.series) {
+      if (!serie.hecha) {
+        const tieneDatos = campos.some(function (campo) {
+          return (serie[campo.nombre] || "").trim() !== "";
+        });
+        if (tieneDatos) {
+          haySeriesSinMarcar = true;
+        }
+        continue;
+      }
+
+      const numeros = convertirSerie(serie, campos);
+      if (!numeros) {
+        mostrarError(error, "Revisa «" + ejercicio.nombre + "»: hay una serie marcada como hecha con datos que faltan o que no son números.");
+        return;
+      }
+      seriesHechas.push(numeros);
+    }
+
+    if (seriesHechas.length > 0) {
+      ejerciciosHechos.push({ id: ejercicio.id, nombre: ejercicio.nombre, medicion: ejercicio.medicion, series: seriesHechas });
+    }
+  }
+
+  if (ejerciciosHechos.length === 0) {
+    mostrarError(error, "Marca como hecha al menos una serie (la casilla de la derecha). Si no quieres guardar nada, pulsa «Cancelar entrenamiento».");
+    return;
+  }
+
+  if (haySeriesSinMarcar) {
+    const seguro = confirm("Hay series con datos que no están marcadas como hechas. Esas no se guardarán. ¿Terminar igualmente?");
+    if (!seguro) {
+      return;
+    }
+  }
+
+  const entrenamiento = {
+    id: entrenamientoEnCurso.id,
+    fecha: new Date().toISOString(),
+    inicio: entrenamientoEnCurso.inicio,
+    rutina: { nombre: entrenamientoEnCurso.rutina.nombre },
+    ejercicios: ejerciciosHechos
+  };
+
+  const entrenamientos = leerLista(CLAVE_ENTRENAMIENTOS);
+  entrenamientos.push(entrenamiento);
+  if (!guardarDatos(CLAVE_ENTRENAMIENTOS, entrenamientos)) {
+    mostrarError(error, "No se ha podido guardar. Puede que tu navegador no permita guardar datos.");
+    return;
+  }
+
+  descartarEntrenamientoEnCurso();
+
+  // Se sustituye la pantalla del entrenamiento por la del resumen
+  history.replaceState(history.state, "", "#resumen-" + entrenamiento.id);
+  mostrarPantallaActual();
+}
+
+document.getElementById("boton-terminar-entreno").addEventListener("click", terminarEntrenamiento);
+
+// "Cancelar entrenamiento" pregunta antes de tirar lo apuntado
+document.getElementById("boton-cancelar-entreno").addEventListener("click", function () {
+  const seguro = confirm("¿Seguro que quieres cancelar el entrenamiento? Se perderá todo lo que has apuntado.");
+  if (!seguro) {
+    return;
+  }
+  descartarEntrenamientoEnCurso();
+  volver();
+});
+
+
+// ============================================================
+// RESUMEN DE UN ENTRENAMIENTO GUARDADO
+// ============================================================
+function pintarResumen(entrenamiento) {
+  const fin = new Date(entrenamiento.fecha);
+  const minutos = Math.round((fin - new Date(entrenamiento.inicio)) / 60000);
+  const totalSeries = entrenamiento.ejercicios.reduce(function (suma, ejercicio) {
+    return suma + ejercicio.series.length;
+  }, 0);
+
+  const fecha = fin.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" }) +
+    ", " + fin.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+  const duracion = minutos < 1 ? "menos de 1 min" : minutos + " min";
+  const series = totalSeries === 1 ? "1 serie" : totalSeries + " series";
+
+  document.getElementById("resumen-rutina").textContent = entrenamiento.rutina.nombre;
+  document.getElementById("resumen-datos").textContent = fecha + " · " + duracion + " · " + series;
+
+  const contenedor = document.getElementById("resumen-ejercicios");
+  contenedor.innerHTML = "";
+  entrenamiento.ejercicios.forEach(function (ejercicio) {
+    const bloque = document.createElement("div");
+    bloque.className = "bloque-ejercicio";
+
+    const titulo = document.createElement("h3");
+    titulo.className = "bloque-titulo";
+    titulo.textContent = ejercicio.nombre;
+    bloque.appendChild(titulo);
+
+    const lista = document.createElement("ol");
+    lista.className = "series-resumen";
+    ejercicio.series.forEach(function (serie) {
+      const elemento = document.createElement("li");
+      elemento.textContent = textoSerie(serie, ejercicio.medicion);
+      lista.appendChild(elemento);
+    });
+    bloque.appendChild(lista);
+
+    contenedor.appendChild(bloque);
+  });
+}
+
+document.getElementById("boton-resumen-listo").addEventListener("click", volver);
+
+
+// ============================================================
+// INICIO
+// Si hay un entrenamiento sin terminar, se ofrece continuarlo.
+// ============================================================
+function pintarInicio() {
+  document.getElementById("aviso-continuar").hidden = !entrenamientoEnCurso;
+  if (entrenamientoEnCurso) {
+    document.getElementById("continuar-nombre").textContent = entrenamientoEnCurso.rutina.nombre;
+  }
+}
+
+document.getElementById("boton-continuar").addEventListener("click", function () {
+  irA("entrenamiento");
+});
+
+
+// ============================================================
 // NAVEGACIÓN ENTRE PANTALLAS
 // Cada pantalla tiene un nombre corto, que es el que aparece al final
 // de la dirección de la página (por ejemplo: index.html#rutinas).
@@ -528,20 +1026,44 @@ campoNombreEjercicio.addEventListener("input", function () {
 //   - alEntrar: lo que hay que preparar cada vez que se muestra
 // ============================================================
 const PANTALLAS = {
-  inicio: { id: "pantalla-inicio" },
+  inicio: { id: "pantalla-inicio", alEntrar: pintarInicio },
   rutinas: { id: "pantalla-rutinas", padre: "inicio", alEntrar: pintarRutinas },
   "crear-rutina": { id: "pantalla-crear-rutina", padre: "rutinas", alEntrar: abrirCrearRutina },
   "buscar-ejercicio": { id: "pantalla-buscar-ejercicio", padre: "crear-rutina", alEntrar: abrirBuscador },
   "nuevo-ejercicio": { id: "pantalla-nuevo-ejercicio", padre: "crear-rutina", alEntrar: abrirNuevoEjercicio },
-  entrenar: { id: "pantalla-proximamente", titulo: "Empezar entrenamiento", padre: "inicio" },
+  entrenar: { id: "pantalla-elegir-rutina", padre: "inicio", alEntrar: pintarElegirRutina },
+  entrenamiento: { id: "pantalla-entrenamiento", padre: "inicio", alEntrar: pintarEntrenamiento },
   historial: { id: "pantalla-proximamente", titulo: "Historial / Progreso", padre: "inicio" }
 };
 
 // Averigua qué pantalla toca según la dirección.
 // Las rutinas usan nombres como "predeterminada-cuerpo-completo-a" o "mia-r123",
 // y la edición de una rutina propia, "editar-mia-r123".
+// El resumen de un entrenamiento guardado usa "resumen-t123".
 function pantallaActual() {
   const nombre = location.hash.slice(1);
+
+  // Sin entrenamiento en curso, toca elegir una rutina para empezar uno
+  if (nombre === "entrenamiento" && !entrenamientoEnCurso) {
+    return PANTALLAS.entrenar;
+  }
+
+  const resumen = nombre.match(/^resumen-(.+)$/);
+  if (resumen) {
+    const entrenamiento = leerLista(CLAVE_ENTRENAMIENTOS).find(function (guardado) {
+      return guardado.id === resumen[1];
+    });
+    if (entrenamiento) {
+      return {
+        id: "pantalla-resumen",
+        padre: "inicio",
+        alEntrar: function () {
+          pintarResumen(entrenamiento);
+        }
+      };
+    }
+    return PANTALLAS.inicio;
+  }
 
   const edicion = nombre.match(/^editar-mia-(.+)$/);
   if (edicion) {

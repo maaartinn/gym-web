@@ -432,3 +432,179 @@ button {
 .resultados {
   margin-top: 16px;
 }
+
+/* ---------- Entrenamiento ---------- */
+
+/* Aviso en el inicio cuando hay un entrenamiento sin terminar */
+.aviso-continuar {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #fff0ea;
+  border: 2px solid #ff5a1f;
+  border-radius: 14px;
+}
+
+.aviso-continuar p {
+  margin: 0;
+  word-break: break-word;
+}
+
+.aviso-continuar .boton-principal {
+  margin-top: 12px;
+}
+
+/* Texto de ayuda gris debajo del título */
+.explicacion {
+  margin: -12px 0 16px;
+  color: #7a8291;
+}
+
+/* Bloque blanco de cada ejercicio (en el entrenamiento y en el resumen) */
+.bloque-ejercicio {
+  margin-bottom: 14px;
+  padding: 16px 12px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.bloque-titulo {
+  margin: 0 4px;
+  font-size: 1.15rem;
+  word-break: break-word;
+}
+
+/* "Última vez: 40 kg x 10" */
+.ultima-vez {
+  margin: 4px 4px 0;
+  font-size: 0.95rem;
+  color: #7a8291;
+}
+
+/* Cada fila de serie es una rejilla: número, campos y casilla.
+   Hay ejercicios con un campo (reps o segundos) y con dos (kg y reps). */
+.fila-serie {
+  display: grid;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 4px;
+  border-radius: 10px;
+}
+
+.fila-serie.campos-1 {
+  grid-template-columns: 44px 1fr 52px;
+}
+
+.fila-serie.campos-2 {
+  grid-template-columns: 44px 1fr 1fr 52px;
+}
+
+/* Fila de títulos: "Serie | kg | Reps | Hecha" */
+.cabecera-series {
+  margin-top: 12px;
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #7a8291;
+  text-align: center;
+}
+
+.numero-serie {
+  text-align: center;
+  font-weight: 600;
+}
+
+.campo-serie {
+  width: 100%;
+  min-width: 0;
+  padding: 12px 6px;
+  font-size: 1.1rem; /* 16px o más: así el iPhone no hace zoom al escribir */
+  font-family: inherit;
+  text-align: center;
+  color: inherit;
+  background: #fff;
+  border: 1px solid #c8cdd6;
+  border-radius: 10px;
+}
+
+.campo-serie:focus {
+  outline: 2px solid #ff5a1f;
+  border-color: transparent;
+}
+
+/* Zona grande alrededor de la casilla, para pulsarla fácil */
+.casilla-hecha {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  cursor: pointer;
+}
+
+.casilla-hecha input {
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  accent-color: #2e7d32;
+}
+
+/* Serie marcada como hecha: fondo verde */
+.serie-hecha {
+  background: #e8f5e9;
+}
+
+.serie-hecha .campo-serie {
+  border-color: #a5d6a7;
+}
+
+/* Botones "Añadir serie" y "Quitar serie" */
+.botones-series {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.boton-serie {
+  flex: 1;
+  padding: 12px 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1d2433;
+  background: #f2f4f7;
+  border: none;
+  border-radius: 10px;
+}
+
+.boton-serie:active {
+  background: #e2e6ec;
+}
+
+.boton-serie:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+/* ---------- Resumen ---------- */
+
+.resumen-rutina {
+  margin: -8px 0 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.resumen-datos {
+  margin: 4px 0 20px;
+  color: #7a8291;
+}
+
+.series-resumen {
+  margin: 8px 0 0;
+  padding-left: 28px;
+}
+
+.series-resumen li {
+  padding: 3px 0;
+}
