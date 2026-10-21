@@ -6,7 +6,8 @@
        detrás de la muesca y de la barra de abajo (estilos.css deja el
        espacio necesario), así no quedan franjas de otro color -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Mi app de gym</title>
+  <!-- El título lo pone marca.js, donde está el nombre de la app -->
+  <title></title>
 
   <!-- La app es oscura: el navegador usa controles y fondos oscuros -->
   <meta name="color-scheme" content="dark">
@@ -20,19 +21,27 @@
   <link rel="apple-touch-icon" href="iconos/icono-180.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Mi gym">
+  <!-- El nombre bajo el icono también lo pone marca.js -->
+  <meta name="apple-mobile-web-app-title" content="">
   <!-- Instalada en el iPhone: la barra de la hora y la batería se ve sobre
        el fondo de la app (con letras claras), sin franja blanca -->
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
   <link rel="stylesheet" href="estilos.css">
+
+  <!-- Nombre de la app: se carga lo primero para que la pestaña tenga su título -->
+  <script src="marca.js"></script>
 </head>
 <body>
   <div class="contenedor">
 
     <!-- Pantalla de inicio -->
     <section class="pantalla" id="pantalla-inicio">
-      <h1>Mi app de gym</h1>
+      <!-- Logo con el nombre. El texto alternativo (lo que leen los lectores
+           de pantalla) es el nombre de la app: lo pone app.js -->
+      <h1 class="cabecera-inicio">
+        <img class="logo-inicio" id="logo-inicio" src="img/logo-cabecera.png" alt="" width="420" height="428">
+      </h1>
 
       <!-- Solo se ve si hay un entrenamiento sin terminar -->
       <div class="aviso-continuar" id="aviso-continuar" hidden>
@@ -248,7 +257,7 @@
       <!-- Todo el calendario va en un recuadro, con el nombre de la app
            arriba, para que se vea completo en una captura de pantalla -->
       <div class="calendario">
-        <p class="calendario-app">Mi app de gym</p>
+        <p class="calendario-app" data-nombre-app></p>
 
         <div class="calendario-cabecera">
           <button class="boton-mes" id="mes-anterior" aria-label="Mes anterior">‹</button>

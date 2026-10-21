@@ -1991,6 +1991,17 @@ campoArchivo.addEventListener("change", async function () {
 
 
 // ============================================================
+// NOMBRE DE LA APP
+// El nombre está en marca.js (NOMBRE_APP). Aquí se pone en la página:
+// en lo que tiene el atributo data-nombre-app y en el logo del inicio.
+// ============================================================
+document.querySelectorAll("[data-nombre-app]").forEach(function (elemento) {
+  elemento.textContent = NOMBRE_APP;
+});
+document.getElementById("logo-inicio").alt = NOMBRE_APP;
+
+
+// ============================================================
 // INICIO
 // Si hay un entrenamiento sin terminar, se ofrece continuarlo.
 // ============================================================

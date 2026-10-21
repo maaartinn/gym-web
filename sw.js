@@ -18,11 +18,12 @@
 // Los datos de cada persona (localStorage) no se guardan aquí ni se tocan.
 // ============================================================
 
-const CACHE = "gym-v2";
+const CACHE = "gym-v3";
 
 const ARCHIVOS = [
   "./",
   "./index.html",
+  "./marca.js",
   "./estilos.css",
   "./ejercicios.js",
   "./rutinas-predeterminadas.js",
@@ -30,7 +31,8 @@ const ARCHIVOS = [
   "./manifest.webmanifest",
   "./iconos/icono-180.png",
   "./iconos/icono-192.png",
-  "./iconos/icono-512.png"
+  "./iconos/icono-512.png",
+  "./img/logo-cabecera.png"
 ];
 
 // Si internet tarda más que esto (en milisegundos), se usa la copia guardada.

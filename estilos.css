@@ -95,6 +95,22 @@ h1 {
   margin: 28px 0 36px;
 }
 
+/* Cabecera del inicio: el logo, centrado y de tamaño discreto.
+   width + height: auto mantienen su forma (no se deforma). El fondo de la
+   imagen es del mismo color que --color-fondo: si cambia el fondo, hay que
+   cambiar también la imagen (o usar una con fondo transparente). */
+.cabecera-inicio {
+  margin: 20px 0 32px;
+}
+
+.logo-inicio {
+  display: block;
+  width: 140px;
+  max-width: 45%;
+  height: auto;
+  margin: 0 auto;
+}
+
 h2 {
   font-size: 1.6rem;
   font-weight: 700;
@@ -742,7 +758,7 @@ button {
   border-radius: 18px;
 }
 
-/* "Mi app de gym", arriba del calendario */
+/* El nombre de la app, arriba del calendario */
 .calendario-app {
   margin: 0 0 12px;
   text-align: center;
