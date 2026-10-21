@@ -897,3 +897,85 @@ button {
   width: 100%;
   margin-top: 10px;
 }
+
+/* ---------- Cronómetro del entrenamiento ---------- */
+
+/* Fijo arriba a la derecha (a la altura de "Volver", que está a la
+   izquierda): no se mueve al hacer scroll. En pantallas grandes se queda
+   en el borde derecho del contenido (que mide como mucho 480px). */
+.cronometro {
+  position: fixed;
+  top: calc(24px + env(safe-area-inset-top));
+  right: max(16px, calc(50% - 240px));
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums; /* Los números no "bailan" al cambiar */
+  color: #4a5262;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #dde1e7;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(29, 36, 51, 0.08);
+  pointer-events: none; /* No estorba al pulsar lo que hay debajo */
+}
+
+.cronometro-icono {
+  font-size: 0.9rem;
+}
+
+/* ---------- Ventanas (duración y aviso de entrenamiento largo) ---------- */
+
+.ventana {
+  width: calc(100% - 32px);
+  max-width: 420px;
+  padding: 20px 16px;
+  border: none;
+  border-radius: 16px;
+  background: #fff;
+  color: #1d2433;
+}
+
+.ventana::backdrop {
+  background: rgba(29, 36, 51, 0.5);
+}
+
+.ventana h3 {
+  margin: 0 0 8px;
+}
+
+.ventana p {
+  margin: 0 0 12px;
+  word-break: break-word;
+}
+
+.ventana .error {
+  margin: 12px 0 0;
+}
+
+.boton-ventana {
+  width: 100%;
+  margin-top: 10px;
+}
+
+/* Campos de horas y minutos, uno al lado del otro */
+.campos-duracion {
+  display: flex;
+  gap: 12px;
+}
+
+.campo-duracion {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.campo-duracion .campo {
+  text-align: center;
+  font-size: 1.2rem;
+}

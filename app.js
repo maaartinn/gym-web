@@ -16,7 +16,7 @@
 // añade en actualizarFormato() el paso que convierte lo antiguo en lo
 // nuevo. Así no se pierde nada de lo que ya tenga guardado cada persona.
 // ============================================================
-const VERSION_DATOS = 2;
+const VERSION_DATOS = 3;
 
 const CLAVE_MIS_RUTINAS = "misRutinas";
 const CLAVE_MIS_EJERCICIOS = "misEjercicios";
@@ -47,10 +47,22 @@ function actualizarFormato(clave, version, datos) {
     version = 2;
   }
 
-  // Cuando exista la versión 3, aquí irá algo así:
-  // if (version === 2) {
+  // De la versión 2 a la 3: cada entrenamiento guardado tiene su duración
+  // en segundos (duracion). Los antiguos no la tenían, pero sí la hora de
+  // inicio y la de fin (fecha), así que se calcula con ellas. Si no se
+  // puede calcular, se queda en null (y no se muestra). Si ya tienen una,
+  // se respeta.
+  if (version === 2) {
+    if (clave === CLAVE_ENTRENAMIENTOS && Array.isArray(datos)) {
+      datos.forEach(anadirDuracion);
+    }
+    version = 3;
+  }
+
+  // Cuando exista la versión 4, aquí irá algo así:
+  // if (version === 3) {
   //   datos = ...convertir los datos...;
-  //   version = 3;
+  //   version = 4;
   // }
 
   return datos;
@@ -66,6 +78,16 @@ function anadirNotasVacias(entrenamiento) {
       ejercicio.nota = "";
     }
   });
+}
+
+// Pone a un entrenamiento guardado antiguo su duración, calculada con la
+// hora de inicio y la de fin. null si falta alguna o no tiene sentido.
+function anadirDuracion(entrenamiento) {
+  if (!entrenamiento || typeof entrenamiento.duracion === "number") {
+    return;
+  }
+  const milisegundos = Date.parse(entrenamiento.fecha) - Date.parse(entrenamiento.inicio);
+  entrenamiento.duracion = milisegundos >= 0 ? Math.round(milisegundos / 1000) : null; // NaN >= 0 es false
 }
 
 // Lee un dato guardado en el navegador, ya en el formato actual.
@@ -848,6 +870,7 @@ function empezarEntrenamiento(rutina) {
 // Rellena la pantalla del entrenamiento en curso
 function pintarEntrenamiento() {
   document.getElementById("entreno-nombre").textContent = entrenamientoEnCurso.rutina.nombre;
+  actualizarCronometro();
 
   const anteriores = leerLista(CLAVE_ENTRENAMIENTOS);
   const contenedor = document.getElementById("entreno-ejercicios");
@@ -871,6 +894,54 @@ function pintarEntrenamiento() {
   if (bloqueDestacado) {
     bloqueDestacado.scrollIntoView({ block: "center" });
   }
+}
+
+// ---------- Cronómetro ----------
+// No cuenta segundos uno a uno: calcula cada vez el tiempo que ha pasado
+// desde la hora de inicio guardada en el entrenamiento. Así es correcto
+// aunque se bloquee el móvil, se cambie de aplicación o se recargue.
+// Solo cambia su propio texto, sin volver a dibujar la pantalla, para
+// no cerrar el teclado ni borrar lo que se está escribiendo.
+
+const textoCronometro = document.getElementById("cronometro-tiempo");
+let temporizadorCronometro = null;
+
+// Segundos que han pasado desde una fecha guardada (0 si no se puede saber)
+function segundosDesde(fechaInicio) {
+  const segundos = Math.floor((Date.now() - Date.parse(fechaInicio)) / 1000);
+  return segundos > 0 ? segundos : 0; // NaN > 0 es false
+}
+
+// 754 → "12:34"; 3920 → "1:05:20"
+function textoTiempo(segundos) {
+  const horas = Math.floor(segundos / 3600);
+  const minutos = Math.floor((segundos % 3600) / 60);
+  const resto = segundos % 60;
+  if (horas === 0) {
+    return minutos + ":" + dosCifras(resto);
+  }
+  return horas + ":" + dosCifras(minutos) + ":" + dosCifras(resto);
+}
+
+// Pone el tiempo en el cronómetro y programa la siguiente vez
+function actualizarCronometro() {
+  clearTimeout(temporizadorCronometro);
+  if (!entrenamientoEnCurso) {
+    return;
+  }
+  const texto = textoTiempo(segundosDesde(entrenamientoEnCurso.inicio));
+  if (textoCronometro.textContent !== texto) {
+    textoCronometro.textContent = texto;
+  }
+  // La próxima vez, justo cuando cambie el segundo
+  const milisegundos = Date.now() - Date.parse(entrenamientoEnCurso.inicio);
+  const espera = milisegundos > 0 ? 1000 - (milisegundos % 1000) : 1000;
+  temporizadorCronometro = setTimeout(actualizarCronometro, espera);
+}
+
+function detenerCronometro() {
+  clearTimeout(temporizadorCronometro);
+  temporizadorCronometro = null;
 }
 
 // Lo que pasa cada vez que se escribe algo o se marca una casilla
@@ -1266,10 +1337,18 @@ function terminarEntrenamiento() {
     return;
   }
 
+  // Antes de guardar, se pregunta la duración (por si hay que corregirla)
+  pedirDuracion(ejerciciosHechos);
+}
+
+// Guarda el entrenamiento terminado, con la duración ya elegida, y muestra el resumen
+function guardarEntrenamientoTerminado(ejerciciosHechos, duracion) {
+  const error = document.getElementById("error-entreno");
   const entrenamiento = {
     id: entrenamientoEnCurso.id,
     fecha: new Date().toISOString(),
     inicio: entrenamientoEnCurso.inicio,
+    duracion: duracion,
     rutina: { nombre: entrenamientoEnCurso.rutina.nombre },
     ejercicios: ejerciciosHechos
   };
@@ -1289,6 +1368,65 @@ function terminarEntrenamiento() {
 }
 
 document.getElementById("boton-terminar-entreno").addEventListener("click", terminarEntrenamiento);
+
+// ---------- Corregir la duración antes de guardar ----------
+// Al terminar sale una ventana con la duración (horas y minutos) ya
+// rellenada con el tiempo del cronómetro. Si no se toca, se guarda el
+// tiempo exacto; si se cambia, se guarda lo escrito.
+
+const ventanaDuracion = document.getElementById("ventana-duracion");
+const campoHoras = document.getElementById("duracion-horas");
+const campoMinutos = document.getElementById("duracion-minutos");
+
+// Lo que se va a guardar mientras la ventana está abierta
+let pendienteDeGuardar = null;
+
+function pedirDuracion(ejerciciosHechos) {
+  const segundos = segundosDesde(entrenamientoEnCurso.inicio);
+  campoHoras.value = String(Math.floor(segundos / 3600));
+  campoMinutos.value = String(Math.floor((segundos % 3600) / 60));
+  pendienteDeGuardar = { ejercicios: ejerciciosHechos, segundos: segundos, horas: campoHoras.value, minutos: campoMinutos.value };
+  document.getElementById("error-duracion").hidden = true;
+  ventanaDuracion.showModal();
+}
+
+// "Guardar entrenamiento" (dentro de la ventana)
+document.getElementById("boton-guardar-duracion").addEventListener("click", function () {
+  if (!pendienteDeGuardar || !entrenamientoEnCurso) {
+    return; // Evita guardarlo dos veces con un doble toque
+  }
+
+  let duracion = pendienteDeGuardar.segundos;
+  const cambiada = campoHoras.value.trim() !== pendienteDeGuardar.horas || campoMinutos.value.trim() !== pendienteDeGuardar.minutos;
+  if (cambiada) {
+    // Un campo vacío cuenta como 0
+    const horas = leerNumero(campoHoras.value.trim() || "0", false);
+    const minutos = leerNumero(campoMinutos.value.trim() || "0", false);
+    const error = document.getElementById("error-duracion");
+    if (horas === null || minutos === null || horas > 23 || minutos > 59) {
+      mostrarError(error, "Escribe las horas (de 0 a 23) y los minutos (de 0 a 59) con números.");
+      return;
+    }
+    if (horas === 0 && minutos === 0) {
+      mostrarError(error, "La duración tiene que ser de al menos 1 minuto.");
+      return;
+    }
+    duracion = horas * 3600 + minutos * 60;
+  }
+
+  const ejercicios = pendienteDeGuardar.ejercicios;
+  ventanaDuracion.close();
+  guardarEntrenamientoTerminado(ejercicios, duracion);
+});
+
+// "Seguir entrenando": cierra la ventana sin guardar nada
+document.getElementById("boton-cerrar-duracion").addEventListener("click", function () {
+  ventanaDuracion.close();
+});
+
+ventanaDuracion.addEventListener("close", function () {
+  pendienteDeGuardar = null;
+});
 
 // "Cancelar entrenamiento" pregunta antes de tirar lo apuntado
 function cancelarEntrenamiento() {
@@ -1334,6 +1472,25 @@ function textoSeries(entrenamiento) {
   return total === 1 ? "1 serie" : total + " series";
 }
 
+// Si un entrenamiento guardado tiene duración (si no se pudo saber, es null)
+function tieneDuracion(entrenamiento) {
+  return typeof entrenamiento.duracion === "number";
+}
+
+// Duración guardada, en texto: "menos de 1 min", "45 min", "1 h 5 min"
+function textoDuracion(segundos) {
+  const minutosTotales = Math.floor(segundos / 60);
+  if (minutosTotales < 1) {
+    return "menos de 1 min";
+  }
+  const horas = Math.floor(minutosTotales / 60);
+  const minutos = minutosTotales % 60;
+  if (horas === 0) {
+    return minutos + " min";
+  }
+  return minutos === 0 ? horas + " h" : horas + " h " + minutos + " min";
+}
+
 // Rellena la pantalla "Historial": una tarjeta por entrenamiento, del más reciente al más antiguo
 function pintarHistorial() {
   const entrenamientos = leerLista(CLAVE_ENTRENAMIENTOS).slice().sort(function (a, b) {
@@ -1343,7 +1500,11 @@ function pintarHistorial() {
   const lista = document.getElementById("lista-historial");
   lista.innerHTML = "";
   entrenamientos.forEach(function (entrenamiento) {
-    const subtitulo = entrenamiento.rutina.nombre + " · " + textoCantidad(entrenamiento) + " · " + textoSeries(entrenamiento);
+    const partes = [entrenamiento.rutina.nombre, textoCantidad(entrenamiento), textoSeries(entrenamiento)];
+    if (tieneDuracion(entrenamiento)) {
+      partes.push(textoDuracion(entrenamiento.duracion));
+    }
+    const subtitulo = partes.join(" · ");
     const tarjeta = crearTarjeta(fechaLegibleTitulo(new Date(entrenamiento.fecha)), subtitulo, crearFlecha());
     tarjeta.addEventListener("click", function () {
       irA("historial-" + entrenamiento.id);
@@ -1363,16 +1524,17 @@ function pintarResumen(entrenamiento, recienTerminado) {
   entrenamientoEnResumen = entrenamiento;
 
   const fin = new Date(entrenamiento.fecha);
-  const minutos = Math.round((fin - new Date(entrenamiento.inicio)) / 60000);
-
-  const fecha = fechaLegibleTitulo(fin) + ", " + fin.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
-  const duracion = minutos < 1 ? "menos de 1 min" : minutos + " min";
+  const partes = [fechaLegibleTitulo(fin) + ", " + fin.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })];
+  if (tieneDuracion(entrenamiento)) {
+    partes.push(textoDuracion(entrenamiento.duracion));
+  }
+  partes.push(textoSeries(entrenamiento));
 
   document.getElementById("resumen-titulo").textContent = recienTerminado ? "¡Entrenamiento guardado!" : "Entrenamiento";
   document.getElementById("boton-resumen-listo").textContent = recienTerminado ? "Volver al inicio" : "Volver al historial";
   document.getElementById("error-resumen").hidden = true;
   document.getElementById("resumen-rutina").textContent = entrenamiento.rutina.nombre;
-  document.getElementById("resumen-datos").textContent = fecha + " · " + duracion + " · " + textoSeries(entrenamiento);
+  document.getElementById("resumen-datos").textContent = partes.join(" · ");
 
   const contenedor = document.getElementById("resumen-ejercicios");
   contenedor.innerHTML = "";
@@ -1721,6 +1883,8 @@ function esSerieValida(serie, medicion) {
 function esEntrenamientoValido(entrenamiento) {
   return Boolean(entrenamiento) && esTexto(entrenamiento.id) &&
     esFecha(entrenamiento.fecha) && esFecha(entrenamiento.inicio) &&
+    // Duración en segundos, o null si no se sabe (las copias antiguas ya llegan con ella calculada)
+    (entrenamiento.duracion === null || (typeof entrenamiento.duracion === "number" && isFinite(entrenamiento.duracion) && entrenamiento.duracion >= 0)) &&
     Boolean(entrenamiento.rutina) && typeof entrenamiento.rutina.nombre === "string" &&
     esListaDe(entrenamiento.ejercicios, function (ejercicio) {
       return Boolean(ejercicio) && esTexto(ejercicio.id) && esTexto(ejercicio.nombre) && esMedicion(ejercicio.medicion) &&
@@ -1839,6 +2003,65 @@ function pintarInicio() {
 
 document.getElementById("boton-continuar").addEventListener("click", function () {
   irA("entrenamiento");
+});
+
+// ---------- Aviso de entrenamiento muy largo ----------
+// Si al abrir la app (o al volver a ella) hay un entrenamiento que empezó
+// hace más de 4 horas, seguramente se olvidó terminarlo. Se pregunta qué
+// hacer. Si se elige continuar, se apunta en el entrenamiento
+// (avisoLargoRespondido) para no volver a preguntar.
+
+const HORAS_AVISO_LARGO = 4;
+const ventanaLargo = document.getElementById("ventana-entreno-largo");
+
+function avisarSiEsMuyLargo() {
+  if (!entrenamientoEnCurso || entrenamientoEnCurso.avisoLargoRespondido || ventanaLargo.open || ventanaDuracion.open) {
+    return;
+  }
+  const segundos = segundosDesde(entrenamientoEnCurso.inicio);
+  if (segundos < HORAS_AVISO_LARGO * 3600) {
+    return;
+  }
+  document.getElementById("largo-nombre").textContent = entrenamientoEnCurso.rutina.nombre;
+  document.getElementById("largo-tiempo").textContent = textoDuracion(segundos);
+  ventanaLargo.showModal();
+}
+
+// Lleva al entrenamiento en curso, si no se está ya en él
+function irAlEntrenamiento() {
+  if (pantallaActual().id !== "pantalla-entrenamiento") {
+    irA("entrenamiento");
+  }
+}
+
+document.getElementById("boton-largo-continuar").addEventListener("click", function () {
+  ventanaLargo.close();
+  entrenamientoEnCurso.avisoLargoRespondido = true;
+  guardarEntrenamientoEnCurso();
+  irAlEntrenamiento();
+});
+
+// "Terminarlo ahora": lo mismo que "Terminar entrenamiento"; después sale
+// la ventana para corregir la duración
+document.getElementById("boton-largo-terminar").addEventListener("click", function () {
+  ventanaLargo.close();
+  irAlEntrenamiento();
+  terminarEntrenamiento();
+  const error = document.getElementById("error-entreno");
+  if (!error.hidden) {
+    error.scrollIntoView({ block: "center" }); // Por ejemplo, si no hay ninguna serie hecha
+  }
+});
+
+// Al volver a la app (después de bloquear el móvil o cambiar de aplicación)
+document.addEventListener("visibilitychange", function () {
+  if (document.visibilityState !== "visible") {
+    return;
+  }
+  if (temporizadorCronometro) {
+    actualizarCronometro(); // Para que no se vea un momento el tiempo de antes
+  }
+  avisarSiEsMuyLargo();
 });
 
 
@@ -1986,6 +2209,14 @@ function pantallaActual() {
 function mostrarPantallaActual() {
   const pantalla = pantallaActual();
 
+  // El cronómetro solo corre en la pantalla del entrenamiento (se vuelve a
+  // poner en marcha al entrar), y las ventanas no se quedan abiertas
+  // encima de otra pantalla (por ejemplo, al usar la flecha de atrás)
+  detenerCronometro();
+  document.querySelectorAll("dialog.ventana[open]").forEach(function (ventana) {
+    ventana.close();
+  });
+
   document.querySelectorAll(".pantalla").forEach(function (seccion) {
     seccion.hidden = seccion.id !== pantalla.id;
   });
@@ -2030,6 +2261,7 @@ document.querySelectorAll(".boton-volver").forEach(function (boton) {
 window.addEventListener("popstate", mostrarPantallaActual);
 
 mostrarPantallaActual();
+avisarSiEsMuyLargo();
 
 
 // ============================================================

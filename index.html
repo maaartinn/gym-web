@@ -170,6 +170,12 @@
 
     <!-- Pantalla del entrenamiento en curso -->
     <section class="pantalla" id="pantalla-entrenamiento" hidden>
+      <!-- Cronómetro: fijo arriba, no se mueve al hacer scroll -->
+      <div class="cronometro" role="timer" aria-label="Tiempo de entrenamiento">
+        <span class="cronometro-icono" aria-hidden="true">⏱</span>
+        <span id="cronometro-tiempo">0:00</span>
+      </div>
+
       <button class="boton-volver">← Volver</button>
       <h2 id="entreno-nombre"></h2>
       <p class="explicacion">Apunta cada serie y marca la casilla cuando la termines. Todo se guarda solo.</p>
@@ -256,6 +262,34 @@
     </section>
 
   </div>
+
+  <!-- Ventana al terminar un entrenamiento: permite corregir la duración -->
+  <dialog class="ventana" id="ventana-duracion" aria-labelledby="duracion-titulo">
+    <h3 id="duracion-titulo">¿Cuánto has entrenado?</h3>
+    <p>Si se te olvidó terminar a tiempo, corrige la duración.</p>
+    <div class="campos-duracion">
+      <label class="campo-duracion">
+        <input class="campo" type="text" inputmode="numeric" id="duracion-horas" autocomplete="off" maxlength="2">
+        h
+      </label>
+      <label class="campo-duracion">
+        <input class="campo" type="text" inputmode="numeric" id="duracion-minutos" autocomplete="off" maxlength="2">
+        min
+      </label>
+    </div>
+    <p class="error" id="error-duracion" role="alert" hidden></p>
+    <!-- autofocus: así no se abre el teclado nada más salir la ventana -->
+    <button class="boton-principal" id="boton-guardar-duracion" autofocus>Guardar entrenamiento</button>
+    <button class="boton-opcion boton-ventana" id="boton-cerrar-duracion">Seguir entrenando</button>
+  </dialog>
+
+  <!-- Ventana al abrir la app con un entrenamiento empezado hace más de 4 horas -->
+  <dialog class="ventana" id="ventana-entreno-largo" aria-labelledby="largo-titulo">
+    <h3 id="largo-titulo">¿Sigues entrenando?</h3>
+    <p>Tu entrenamiento <strong id="largo-nombre"></strong> empezó hace <span id="largo-tiempo"></span>. ¿Se te olvidó terminarlo?</p>
+    <button class="boton-principal" id="boton-largo-terminar" autofocus>Terminarlo ahora</button>
+    <button class="boton-opcion boton-ventana" id="boton-largo-continuar">Continuar entrenamiento</button>
+  </dialog>
 
   <!-- Aviso breve que aparece abajo unos segundos (por ejemplo, "Rutina copiada") -->
   <div class="aviso-flotante" id="aviso-flotante" role="status" hidden></div>
