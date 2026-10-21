@@ -3,6 +3,37 @@
    Aquí solo hay colores, tamaños y posiciones. La lógica está en app.js.
    ============================================================ */
 
+/* ============================================================
+   COLORES
+   Todos los colores de la app están aquí. Para cambiar el aspecto,
+   basta con cambiar estos valores.
+   ============================================================ */
+:root {
+  /* Paleta principal */
+  --color-fondo: #0B1220;
+  --color-superficie: #131C2E;         /* Tarjetas, bloques y campos */
+  --color-borde: #22304A;
+  --color-texto: #E8EEF7;
+  --color-texto-secundario: #94A3B8;
+  --color-acento: #2DD4BF;             /* Solo: botón principal, lo activo o elegido y los días del calendario */
+  --color-texto-sobre-acento: #06201C;
+  --color-error: #F87171;              /* Errores y botones de borrar */
+
+  /* Variantes de la paleta (si cambias la paleta, ajusta también estas) */
+  --color-superficie-pulsada: #1A2640; /* Fondo de un botón o tarjeta mientras se pulsa */
+  --color-acento-pulsado: #26B5A3;
+  --color-acento-suave: rgba(45, 212, 191, 0.12);  /* Fondo de lo activo o elegido */
+  --color-acento-borde: rgba(45, 212, 191, 0.45);
+  --color-error-suave: rgba(248, 113, 113, 0.10);
+  --color-error-borde: rgba(248, 113, 113, 0.45);
+  --color-velo: rgba(3, 6, 12, 0.72);              /* Lo que oscurece la pantalla detrás de una ventana */
+  --color-sombra: rgba(0, 0, 0, 0.35);             /* Sombra suave del aviso breve que flota abajo */
+
+  /* Le dice al navegador que la app es oscura: así los controles propios
+     del navegador (casillas, barras de desplazamiento…) también son oscuros */
+  color-scheme: dark;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -12,12 +43,43 @@
   display: none !important;
 }
 
+/* El fondo también en html: así, al estirar la página más allá del borde
+   (arriba o abajo en el iPhone), no aparece ninguna franja de otro color */
+html {
+  min-height: 100%;
+  background: var(--color-fondo);
+}
+
+/* El relleno incluye las zonas seguras del iPhone (la muesca de arriba y
+   la barra de abajo), porque la app ocupa toda la pantalla */
 body {
   margin: 0;
-  padding: 20px 16px;
+  padding:
+    calc(20px + env(safe-area-inset-top))
+    max(16px, env(safe-area-inset-right))
+    calc(32px + env(safe-area-inset-bottom))
+    max(16px, env(safe-area-inset-left));
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  background: #f2f4f7;
-  color: #1d2433;
+  font-size: 1rem;
+  line-height: 1.4;
+  background: var(--color-fondo);
+  color: var(--color-texto);
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Franja fija del color del fondo detrás de la hora y la batería del
+   iPhone, para que lo que se desplaza no se vea por debajo */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  height: env(safe-area-inset-top);
+  background: var(--color-fondo);
+  pointer-events: none;
 }
 
 .contenedor {
@@ -27,18 +89,23 @@ body {
 
 h1 {
   text-align: center;
-  font-size: 1.8rem;
-  margin: 24px 0 32px;
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 28px 0 36px;
 }
 
 h2 {
   font-size: 1.6rem;
-  margin: 16px 0 24px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin: 20px 0 24px;
 }
 
 h3 {
-  font-size: 1.15rem;
-  margin: 28px 0 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 32px 0 12px;
 }
 
 button {
@@ -46,63 +113,91 @@ button {
   cursor: pointer;
 }
 
+/* Marco visible al moverse con el teclado (no al tocar con el dedo) */
+:focus-visible {
+  outline: 2px solid var(--color-acento);
+  outline-offset: 2px;
+}
+
 /* ---------- Botones ---------- */
 
-/* Botones grandes de la pantalla de inicio */
+/* Botones grandes de la pantalla de inicio: con borde y sin relleno */
 .menu {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .boton-grande {
   width: 100%;
-  padding: 24px 20px;
-  font-size: 1.25rem;
+  padding: 22px 20px;
+  font-size: 1.2rem;
   font-weight: 600;
-  color: #fff;
-  background: #ff5a1f;
-  border: none;
-  border-radius: 14px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  color: var(--color-texto);
+  background: transparent;
+  border: 1px solid var(--color-borde);
+  border-radius: 16px;
 }
 
 .boton-grande:active {
-  background: #e04a12;
+  background: var(--color-superficie-pulsada);
 }
 
-/* Botón naranja normal (por ejemplo, "Crear rutina" o "Guardar") */
+/* "Empezar entrenamiento" es el botón principal del inicio... */
+.boton-grande[data-ir-a="entrenar"] {
+  color: var(--color-texto-sobre-acento);
+  background: var(--color-acento);
+  border-color: var(--color-acento);
+}
+
+.boton-grande[data-ir-a="entrenar"]:active {
+  background: var(--color-acento-pulsado);
+}
+
+/* ...salvo si hay un entrenamiento sin terminar: entonces el principal es
+   "Continuar entrenamiento", y "Empezar" pasa a ser uno más */
+.aviso-continuar:not([hidden]) ~ .menu .boton-grande[data-ir-a="entrenar"] {
+  color: var(--color-texto);
+  background: transparent;
+  border-color: var(--color-borde);
+}
+
+.aviso-continuar:not([hidden]) ~ .menu .boton-grande[data-ir-a="entrenar"]:active {
+  background: var(--color-superficie-pulsada);
+}
+
+/* Botón principal de cada pantalla (por ejemplo, "Crear rutina" o "Guardar") */
 .boton-principal {
   width: 100%;
-  margin-top: 16px;
+  margin-top: 20px;
   padding: 16px;
   font-size: 1.1rem;
-  font-weight: 600;
-  color: #fff;
-  background: #ff5a1f;
+  font-weight: 700;
+  color: var(--color-texto-sobre-acento);
+  background: var(--color-acento);
   border: none;
-  border-radius: 12px;
+  border-radius: 14px;
 }
 
 .boton-principal:active {
-  background: #e04a12;
+  background: var(--color-acento-pulsado);
 }
 
-/* Botón blanco con borde (por ejemplo, "Añadir ejercicio") */
+/* Botón con borde discontinuo (por ejemplo, "+ Añadir ejercicio") */
 .boton-secundario {
   width: 100%;
   margin-top: 12px;
   padding: 16px;
   font-size: 1.05rem;
   font-weight: 600;
-  color: #ff5a1f;
-  background: #fff;
-  border: 2px dashed #ffb899;
-  border-radius: 12px;
+  color: var(--color-texto);
+  background: transparent;
+  border: 1px dashed var(--color-borde);
+  border-radius: 14px;
 }
 
 .boton-secundario:active {
-  background: #fff0ea;
+  background: var(--color-superficie-pulsada);
 }
 
 /* Botón para volver a la pantalla anterior */
@@ -110,14 +205,14 @@ button {
   padding: 12px 16px;
   font-size: 1rem;
   font-weight: 600;
-  color: #ff5a1f;
-  background: #fff;
-  border: 1px solid #c8cdd6;
-  border-radius: 10px;
+  color: var(--color-texto);
+  background: transparent;
+  border: 1px solid var(--color-borde);
+  border-radius: 12px;
 }
 
 .boton-volver:active {
-  background: #f2f4f7;
+  background: var(--color-superficie-pulsada);
 }
 
 /* Botón pequeño "Quitar" */
@@ -126,14 +221,14 @@ button {
   padding: 10px 12px;
   font-size: 0.95rem;
   font-weight: 600;
-  color: #c62828;
-  background: #fdecec;
-  border: none;
-  border-radius: 8px;
+  color: var(--color-error);
+  background: transparent;
+  border: 1px solid var(--color-error-borde);
+  border-radius: 10px;
 }
 
 .boton-quitar:active {
-  background: #f8d4d4;
+  background: var(--color-error-suave);
 }
 
 /* Botones pequeños para subir o bajar un ejercicio */
@@ -144,14 +239,14 @@ button {
   padding: 0;
   font-size: 1.1rem;
   font-weight: 600;
-  color: #1d2433;
-  background: #f2f4f7;
-  border: none;
-  border-radius: 8px;
+  color: var(--color-texto);
+  background: transparent;
+  border: 1px solid var(--color-borde);
+  border-radius: 10px;
 }
 
 .boton-mover:active {
-  background: #e2e6ec;
+  background: var(--color-superficie-pulsada);
 }
 
 .boton-mover:disabled {
@@ -172,21 +267,21 @@ button {
   padding: 16px 10px;
   font-size: 1rem;
   font-weight: 600;
-  color: #c62828;
-  background: #fdecec;
-  border: 1px solid #f3c1c1;
-  border-radius: 12px;
+  color: var(--color-error);
+  background: transparent;
+  border: 1px solid var(--color-error-borde);
+  border-radius: 14px;
 }
 
 .boton-peligro:active {
-  background: #f8d4d4;
+  background: var(--color-error-suave);
 }
 
 /* Botones "Editar" y "Borrar" del detalle de una rutina */
 .acciones-rutina {
   display: flex;
   gap: 10px;
-  margin-top: 16px;
+  margin-top: 12px;
 }
 
 /* Las dos opciones de "Añadir ejercicio" */
@@ -196,40 +291,48 @@ button {
   margin-top: 10px;
 }
 
+/* Botón normal con borde (por ejemplo, "Buscar en la lista" o "Editar") */
 .boton-opcion {
   flex: 1;
   padding: 16px 10px;
   font-size: 1rem;
   font-weight: 600;
-  color: #1d2433;
-  background: #fff;
-  border: 1px solid #c8cdd6;
-  border-radius: 12px;
+  color: var(--color-texto);
+  background: transparent;
+  border: 1px solid var(--color-borde);
+  border-radius: 14px;
 }
 
 .boton-opcion:active {
-  background: #e9ecf1;
+  background: var(--color-superficie-pulsada);
 }
 
 /* ---------- Textos ---------- */
 
 .vacio {
   margin: 0;
-  padding: 18px 16px;
+  padding: 20px 16px;
   text-align: center;
-  color: #7a8291;
-  background: #fff;
-  border-radius: 12px;
+  color: var(--color-texto-secundario);
+  background: transparent;
+  border: 1px dashed var(--color-borde);
+  border-radius: 14px;
 }
 
-/* Mensaje de error (por ejemplo, "Escribe un nombre") */
+/* Mensaje de error (por ejemplo, "Escribe un nombre").
+   Lleva un símbolo delante, para que no se distinga solo por el color. */
 .error {
   margin: 12px 0 0;
   padding: 12px 14px;
-  color: #c62828;
-  background: #fdecec;
-  border-radius: 10px;
+  color: var(--color-error);
+  background: var(--color-error-suave);
+  border: 1px solid var(--color-error-borde);
+  border-radius: 12px;
   font-weight: 600;
+}
+
+.error::before {
+  content: "⚠\FE0E  ";
 }
 
 /* Aviso breve flotante, abajo y centrado */
@@ -238,22 +341,24 @@ button {
   left: 50%;
   bottom: calc(24px + env(safe-area-inset-bottom));
   transform: translateX(-50%);
+  z-index: 30;
   width: max-content;
   max-width: calc(100% - 32px);
   padding: 14px 20px;
   font-weight: 600;
   text-align: center;
-  color: #fff;
-  background: #1d2433;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  color: var(--color-texto);
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: 14px;
+  box-shadow: 0 8px 24px var(--color-sombra);
 }
 
 /* ---------- Formularios ---------- */
 
 .etiqueta {
   display: block;
-  margin: 20px 0 8px;
+  margin: 24px 0 8px;
   font-weight: 600;
 }
 
@@ -263,14 +368,23 @@ button {
   padding: 14px;
   font-size: 1rem; /* 16px o más: así el iPhone no hace zoom al escribir */
   font-family: inherit;
-  border: 1px solid #c8cdd6;
-  border-radius: 10px;
-  background: #fff;
-  color: inherit;
+  color: var(--color-texto);
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: 12px;
+  -webkit-appearance: none; /* Quita el aspecto propio del iPhone (por ejemplo, en el buscador) */
+  appearance: none;
+}
+
+.campo::placeholder,
+.campo-nota::placeholder {
+  color: var(--color-texto-secundario);
+  opacity: 1;
 }
 
 .campo:focus {
-  outline: 2px solid #ff5a1f;
+  outline: 2px solid var(--color-acento);
+  outline-offset: -1px;
   border-color: transparent;
 }
 
@@ -286,7 +400,7 @@ button {
 
 .opciones-medicion legend {
   padding: 0;
-  margin: 20px 0 8px;
+  margin: 24px 0 8px;
   font-weight: 600;
 }
 
@@ -295,22 +409,24 @@ button {
   align-items: center;
   gap: 12px;
   padding: 16px;
-  background: #fff;
-  border: 1px solid #c8cdd6;
-  border-radius: 10px;
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: 12px;
   cursor: pointer;
 }
 
+/* La opción elegida: borde y fondo de acento, y además el círculo marcado */
 .opcion-medicion:has(input:checked) {
-  border: 2px solid #ff5a1f;
-  background: #fff0ea;
+  background: var(--color-acento-suave);
+  border-color: var(--color-acento);
+  font-weight: 600;
 }
 
 .opcion-medicion input {
   width: 20px;
   height: 20px;
   margin: 0;
-  accent-color: #ff5a1f;
+  accent-color: var(--color-acento);
 }
 
 /* ---------- Tarjetas de rutina ---------- */
@@ -330,14 +446,13 @@ button {
   padding: 18px 16px;
   text-align: left;
   color: inherit;
-  background: #fff;
-  border: none;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: 14px;
 }
 
 .tarjeta:active {
-  background: #e9ecf1;
+  background: var(--color-superficie-pulsada);
 }
 
 .tarjeta:disabled {
@@ -356,20 +471,21 @@ button {
   display: block;
   margin-top: 4px;
   font-size: 0.95rem;
-  color: #7a8291;
+  color: var(--color-texto-secundario);
 }
 
 .tarjeta-flecha {
   flex-shrink: 0;
   font-size: 1.5rem;
-  color: #c8cdd6;
+  color: var(--color-texto-secundario);
 }
 
+/* "Ya está", en el buscador */
 .tarjeta-marca {
   flex-shrink: 0;
   font-size: 0.95rem;
   font-weight: 600;
-  color: #7a8291;
+  color: var(--color-texto-secundario);
 }
 
 /* ---------- Listas de ejercicios ---------- */
@@ -385,11 +501,11 @@ button {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: #fff;
   padding: 14px 16px;
   margin-bottom: 8px;
-  border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: 12px;
   word-break: break-word;
   counter-increment: ejercicio;
 }
@@ -404,8 +520,9 @@ button {
   text-align: center;
   font-weight: 600;
   font-size: 0.9rem;
-  color: #ff5a1f;
-  background: #fff0ea;
+  color: var(--color-texto-secundario);
+  background: var(--color-fondo);
+  border: 1px solid var(--color-borde);
   border-radius: 50%;
 }
 
@@ -428,13 +545,14 @@ button {
 
 /* ---------- Entrenamiento ---------- */
 
-/* Aviso en el inicio cuando hay un entrenamiento sin terminar */
+/* Aviso en el inicio cuando hay un entrenamiento sin terminar
+   (es el entrenamiento activo: por eso lleva el borde de acento) */
 .aviso-continuar {
-  margin-bottom: 24px;
-  padding: 16px;
-  background: #fff0ea;
-  border: 2px solid #ff5a1f;
-  border-radius: 14px;
+  margin-bottom: 28px;
+  padding: 18px 16px;
+  background: var(--color-superficie);
+  border: 1px solid var(--color-acento-borde);
+  border-radius: 16px;
 }
 
 .aviso-continuar p {
@@ -443,27 +561,28 @@ button {
 }
 
 .aviso-continuar .boton-principal {
-  margin-top: 12px;
+  margin-top: 14px;
 }
 
-/* Texto de ayuda gris debajo del título */
+/* Texto de ayuda debajo del título */
 .explicacion {
-  margin: -12px 0 16px;
-  color: #7a8291;
+  margin: -12px 0 20px;
+  color: var(--color-texto-secundario);
 }
 
-/* Bloque blanco de cada ejercicio (en el entrenamiento y en el resumen) */
+/* Bloque de cada ejercicio (en el entrenamiento y en el resumen) */
 .bloque-ejercicio {
   margin-bottom: 14px;
   padding: 16px 12px;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: 16px;
 }
 
 .bloque-titulo {
   margin: 0 4px;
   font-size: 1.15rem;
+  font-weight: 600;
   word-break: break-word;
 }
 
@@ -471,7 +590,7 @@ button {
 .ultima-vez {
   margin: 4px 4px 0;
   font-size: 0.95rem;
-  color: #7a8291;
+  color: var(--color-texto-secundario);
 }
 
 /* Cada fila de serie es una rejilla: número, campos y casilla.
@@ -482,7 +601,8 @@ button {
   gap: 8px;
   margin-top: 6px;
   padding: 4px;
-  border-radius: 10px;
+  border: 1px solid transparent;
+  border-radius: 12px;
 }
 
 .fila-serie.campos-1 {
@@ -500,7 +620,7 @@ button {
   padding-bottom: 0;
   font-size: 0.85rem;
   font-weight: 600;
-  color: #7a8291;
+  color: var(--color-texto-secundario);
   text-align: center;
 }
 
@@ -516,14 +636,17 @@ button {
   font-size: 1.1rem; /* 16px o más: así el iPhone no hace zoom al escribir */
   font-family: inherit;
   text-align: center;
-  color: inherit;
-  background: #fff;
-  border: 1px solid #c8cdd6;
+  color: var(--color-texto);
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
   border-radius: 10px;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .campo-serie:focus {
-  outline: 2px solid #ff5a1f;
+  outline: 2px solid var(--color-acento);
+  outline-offset: -1px;
   border-color: transparent;
 }
 
@@ -540,16 +663,18 @@ button {
   width: 28px;
   height: 28px;
   margin: 0;
-  accent-color: #2e7d32;
+  accent-color: var(--color-acento);
 }
 
-/* Serie marcada como hecha: fondo verde */
+/* Serie marcada como hecha: fondo y borde de acento (además de la casilla
+   marcada con ✓, así no depende solo del color) */
 .serie-hecha {
-  background: #e8f5e9;
+  background: var(--color-acento-suave);
+  border-color: var(--color-acento-borde);
 }
 
-.serie-hecha .campo-serie {
-  border-color: #a5d6a7;
+.serie-hecha .numero-serie {
+  color: var(--color-acento);
 }
 
 /* Botones "Añadir serie" y "Quitar serie" */
@@ -564,14 +689,14 @@ button {
   padding: 12px 8px;
   font-size: 0.95rem;
   font-weight: 600;
-  color: #1d2433;
-  background: #f2f4f7;
-  border: none;
-  border-radius: 10px;
+  color: var(--color-texto);
+  background: transparent;
+  border: 1px solid var(--color-borde);
+  border-radius: 12px;
 }
 
 .boton-serie:active {
-  background: #e2e6ec;
+  background: var(--color-superficie-pulsada);
 }
 
 .boton-serie:disabled {
@@ -589,8 +714,8 @@ button {
 }
 
 .resumen-datos {
-  margin: 4px 0 20px;
-  color: #7a8291;
+  margin: 6px 0 24px;
+  color: var(--color-texto-secundario);
 }
 
 .series-resumen {
@@ -602,24 +727,30 @@ button {
   padding: 3px 0;
 }
 
+.series-resumen li::marker {
+  color: var(--color-texto-secundario);
+}
+
 /* ---------- Progreso (calendario) ---------- */
 
-/* Recuadro blanco con todo el calendario */
+/* Recuadro con todo el calendario */
 .calendario {
   margin-top: 16px;
-  padding: 16px 10px;
-  background: #fff;
-  border-radius: 14px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  padding: 18px 12px;
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: 18px;
 }
 
 /* "Mi app de gym", arriba del calendario */
 .calendario-app {
-  margin: 0 0 10px;
+  margin: 0 0 12px;
   text-align: center;
-  font-size: 0.95rem;
+  font-size: 0.8rem;
   font-weight: 700;
-  color: #ff5a1f;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-texto-secundario);
 }
 
 /* Fila con las flechas y el nombre del mes */
@@ -627,7 +758,7 @@ button {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .calendario-mes {
@@ -645,14 +776,14 @@ button {
   font-size: 1.6rem;
   font-weight: 600;
   line-height: 1;
-  color: #1d2433;
-  background: #f2f4f7;
-  border: none;
-  border-radius: 10px;
+  color: var(--color-texto);
+  background: transparent;
+  border: 1px solid var(--color-borde);
+  border-radius: 12px;
 }
 
 .boton-mes:active {
-  background: #e2e6ec;
+  background: var(--color-superficie-pulsada);
 }
 
 /* Rejilla de 7 columnas: nombres de los días y números */
@@ -668,7 +799,7 @@ button {
   text-align: center;
   font-size: 0.8rem;
   font-weight: 600;
-  color: #7a8291;
+  color: var(--color-texto-secundario);
 }
 
 /* Cada día: un círculo con el número */
@@ -687,36 +818,37 @@ button {
   border-radius: 50%;
 }
 
-/* Día con al menos un entrenamiento: círculo naranja */
+/* Día con al menos un entrenamiento: círculo relleno de acento, en negrita */
 .dia-con-entreno {
   font-weight: 700;
-  color: #fff;
-  background: #ff5a1f;
+  color: var(--color-texto-sobre-acento);
+  background: var(--color-acento);
 }
 
 .dia-con-entreno:active {
-  background: #e04a12;
+  background: var(--color-acento-pulsado);
 }
 
-/* Hoy: aro oscuro alrededor */
+/* Hoy: aro claro alrededor y en negrita */
 .dia-hoy {
   font-weight: 700;
-  box-shadow: inset 0 0 0 2px #1d2433;
+  box-shadow: inset 0 0 0 2px var(--color-texto);
 }
 
-/* Hoy y con entrenamiento: aro oscuro por fuera del círculo naranja */
+/* Hoy y con entrenamiento: aro claro por fuera del círculo de acento */
 .dia-con-entreno.dia-hoy {
-  box-shadow: inset 0 0 0 2px #fff, 0 0 0 2px #1d2433;
+  box-shadow: inset 0 0 0 2px var(--color-superficie), 0 0 0 2px var(--color-texto);
 }
 
-/* Día pulsado que tiene varios entrenamientos */
+/* Día pulsado que tiene varios entrenamientos (su lista sale debajo) */
 .dia-elegido {
-  box-shadow: 0 0 0 3px #ffb899;
+  outline: 2px solid var(--color-texto);
+  outline-offset: 3px;
 }
 
 /* "Este mes: 8 entrenamientos" */
 .calendario-total {
-  margin: 14px 0 0;
+  margin: 16px 0 0;
   text-align: center;
   font-size: 1.05rem;
   font-weight: 600;
@@ -727,7 +859,7 @@ button {
 /* Botón "Copia de seguridad" de la pantalla de inicio, debajo de los grandes */
 .boton-copia {
   width: 100%;
-  margin-top: 24px;
+  margin-top: 28px;
 }
 
 .boton-importar {
@@ -736,8 +868,8 @@ button {
 }
 
 .texto-copia {
-  margin: 0 0 12px;
-  line-height: 1.45;
+  margin: 0 0 14px;
+  line-height: 1.5;
 }
 
 #datos-actuales {
@@ -748,17 +880,23 @@ button {
   margin: 8px 0 0;
   font-size: 0.9rem;
   text-align: center;
-  color: #7a8291;
+  color: var(--color-texto-secundario);
 }
 
-/* Mensaje verde de que algo salió bien (por ejemplo, "Datos importados") */
+/* Mensaje de que algo salió bien (por ejemplo, "Datos importados").
+   Lleva ✓ delante, para que no se distinga solo por el color. */
 .exito {
   margin: 12px 0 0;
   padding: 12px 14px;
-  color: #2e7d32;
-  background: #e8f5e9;
-  border-radius: 10px;
+  color: var(--color-texto);
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: 12px;
   font-weight: 600;
+}
+
+.exito::before {
+  content: "✓  ";
 }
 
 /* ---------- Notas de los ejercicios ---------- */
@@ -782,20 +920,21 @@ button {
   padding: 8px 14px;
   font-size: 0.95rem;
   font-weight: 600;
-  color: #1d2433;
-  background: #f2f4f7;
-  border: none;
-  border-radius: 10px;
+  color: var(--color-texto);
+  background: transparent;
+  border: 1px solid var(--color-borde);
+  border-radius: 12px;
 }
 
 .boton-nota:active {
-  background: #e2e6ec;
+  background: var(--color-superficie-pulsada);
 }
 
-/* Botón "Nota" con la nota desplegada */
+/* Botón "Nota" con la nota desplegada (activo) */
 .boton-nota[aria-expanded="true"] {
-  color: #ff5a1f;
-  background: #fff0ea;
+  color: var(--color-acento);
+  background: var(--color-acento-suave);
+  border-color: var(--color-acento-borde);
 }
 
 /* La nota de la última vez, debajo de "Última vez: …" */
@@ -803,7 +942,7 @@ button {
   margin: 2px 4px 0;
   font-size: 0.95rem;
   font-style: italic;
-  color: #7a8291;
+  color: var(--color-texto-secundario);
   white-space: pre-wrap;
   word-break: break-word;
 }
@@ -819,15 +958,18 @@ button {
   font-family: inherit;
   font-size: 1rem; /* 16px o más: así el iPhone no hace zoom al escribir */
   line-height: 1.4;
-  color: inherit;
-  background: #fff;
-  border: 1px solid #c8cdd6;
-  border-radius: 10px;
+  color: var(--color-texto);
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: 12px;
   resize: vertical;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .campo-nota:focus {
-  outline: 2px solid #ff5a1f;
+  outline: 2px solid var(--color-acento);
+  outline-offset: -1px;
   border-color: transparent;
 }
 
@@ -836,15 +978,16 @@ button {
   margin: 4px 0 0;
   text-align: right;
   font-size: 0.85rem;
-  color: #7a8291;
+  color: var(--color-texto-secundario);
 }
 
 /* La nota en el detalle de un entrenamiento guardado */
 .nota-ejercicio {
   margin: 10px 4px 0;
   padding: 10px 12px;
-  background: #f2f4f7;
-  border-radius: 10px;
+  background: var(--color-fondo);
+  border: 1px solid var(--color-borde);
+  border-radius: 12px;
   white-space: pre-wrap; /* Respeta los saltos de línea que se escribieron */
   word-break: break-word;
 }
@@ -860,20 +1003,21 @@ button {
   font-size: 1.4rem;
   font-weight: 700;
   line-height: 1;
-  color: #1d2433;
-  background: #f2f4f7;
-  border: none;
-  border-radius: 10px;
+  color: var(--color-texto);
+  background: transparent;
+  border: 1px solid var(--color-borde);
+  border-radius: 12px;
 }
 
 .boton-menu-ejercicio:active {
-  background: #e2e6ec;
+  background: var(--color-superficie-pulsada);
 }
 
-/* Botón de tres puntos con el menú abierto */
+/* Botón de tres puntos con el menú abierto (activo) */
 .boton-menu-ejercicio[aria-expanded="true"] {
-  color: #ff5a1f;
-  background: #fff0ea;
+  color: var(--color-acento);
+  background: var(--color-acento-suave);
+  border-color: var(--color-acento-borde);
 }
 
 /* Menú con "Reemplazar" y "Quitar", debajo del nombre */
@@ -883,9 +1027,11 @@ button {
   margin: 12px 4px 0;
 }
 
-/* Aviso de que no se puede quitar el último ejercicio */
+/* Aviso de que no se puede quitar el último ejercicio: es un aviso, no
+   algo activo, así que lleva el borde del color de error */
 .aviso-sin-ejercicios {
   margin: 0 0 14px;
+  border-color: var(--color-error-borde);
 }
 
 .aviso-sin-ejercicios .opciones-anadir {
@@ -906,7 +1052,7 @@ button {
 .cronometro {
   position: fixed;
   top: calc(24px + env(safe-area-inset-top));
-  right: max(16px, calc(50% - 240px));
+  right: max(16px, calc(50% - 240px), env(safe-area-inset-right));
   z-index: 10;
   display: flex;
   align-items: center;
@@ -915,11 +1061,10 @@ button {
   font-size: 0.95rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums; /* Los números no "bailan" al cambiar */
-  color: #4a5262;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid #dde1e7;
+  color: var(--color-texto-secundario);
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
   border-radius: 999px;
-  box-shadow: 0 2px 8px rgba(29, 36, 51, 0.08);
   pointer-events: none; /* No estorba al pulsar lo que hay debajo */
 }
 
@@ -932,28 +1077,35 @@ button {
 .ventana {
   width: calc(100% - 32px);
   max-width: 420px;
-  padding: 20px 16px;
-  border: none;
-  border-radius: 16px;
-  background: #fff;
-  color: #1d2433;
+  padding: 22px 18px;
+  color: var(--color-texto);
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: 18px;
 }
 
 .ventana::backdrop {
-  background: rgba(29, 36, 51, 0.5);
+  background: var(--color-velo);
 }
 
 .ventana h3 {
   margin: 0 0 8px;
+  font-size: 1.2rem;
 }
 
 .ventana p {
-  margin: 0 0 12px;
+  margin: 0 0 14px;
+  color: var(--color-texto-secundario);
   word-break: break-word;
+}
+
+.ventana strong {
+  color: var(--color-texto);
 }
 
 .ventana .error {
   margin: 12px 0 0;
+  color: var(--color-error);
 }
 
 .boton-ventana {

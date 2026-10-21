@@ -2,18 +2,28 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- viewport-fit=cover: la app ocupa toda la pantalla del iPhone, también
+       detrás de la muesca y de la barra de abajo (estilos.css deja el
+       espacio necesario), así no quedan franjas de otro color -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Mi app de gym</title>
+
+  <!-- La app es oscura: el navegador usa controles y fondos oscuros -->
+  <meta name="color-scheme" content="dark">
 
   <!-- Para instalarla en la pantalla de inicio: nombre, icono y colores -->
   <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#ff5a1f">
+  <!-- Color de la barra superior del navegador: el del fondo de la app -->
+  <meta name="theme-color" content="#0B1220">
   <link rel="icon" href="iconos/icono-192.png" type="image/png">
   <!-- El iPhone usa estas etiquetas para el icono y el nombre bajo el icono -->
   <link rel="apple-touch-icon" href="iconos/icono-180.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Mi gym">
+  <!-- Instalada en el iPhone: la barra de la hora y la batería se ve sobre
+       el fondo de la app (con letras claras), sin franja blanca -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
   <link rel="stylesheet" href="estilos.css">
 </head>

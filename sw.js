@@ -18,7 +18,7 @@
 // Los datos de cada persona (localStorage) no se guardan aquí ni se tocan.
 // ============================================================
 
-const CACHE = "gym-v1";
+const CACHE = "gym-v2";
 
 const ARCHIVOS = [
   "./",
